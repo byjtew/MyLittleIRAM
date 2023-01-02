@@ -2,3 +2,4 @@ requests
 alive_progress
 bs4
 wget
+numpy

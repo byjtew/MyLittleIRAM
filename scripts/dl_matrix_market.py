@@ -7,14 +7,15 @@ import wget
 
 
 def download(matrix_name: str, output_path: str) -> None:
+    output_path_complete = f"{output_path}/{matrix_name}.mm"
     try:
         # Get the URL of the matrix
         url = _get_matrix_url(matrix_name)
-        print("Downloading matrix from:", url)
+        print("Downloading matrix from:", url, "    to:", output_path_complete)
         # Create output directory if it doesn't exist
         os.makedirs(output_path, exist_ok=True)
         # Download the file
-        _dl_from_url(url, f"{output_path}/{matrix_name}.txt")
+        _dl_from_url(url, output_path_complete)
     except Exception as e:
         print(e)
 
