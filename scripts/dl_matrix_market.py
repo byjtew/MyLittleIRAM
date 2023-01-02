@@ -4,7 +4,7 @@ import os
 from alive_progress import alive_bar
 from bs4 import BeautifulSoup
 import wget
-
+import tarfile
 
 def download(matrix_name: str, output_path: str) -> None:
     output_path_complete = f"{output_path}/{matrix_name}.mm"
@@ -51,8 +51,15 @@ def _get_matrix_url(matrix_name: str) -> str:
 
 
 def _dl_from_url(url: str, output_destination: str) -> None:
+    tmp_destination = "/tmp/temporary.mtx.gz"
     with alive_bar(bar='blocks', spinner='classic') as bar:
-        wget.download(url, out=output_destination, bar=lambda current, total, _: bar(int(current / total * 100)))
+        wget.download(url, out=tmp_destination, bar=lambda current, total, _: bar(int(current / total * 100)))
+    try:
+        file = tarfile.open(tmp_destination)
+        file.extractall(path=output_destination)
+        file.close()
+    finally:
+        os.remove(tmp_destination)
 
 
 def main():
