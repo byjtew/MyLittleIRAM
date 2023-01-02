@@ -12,9 +12,8 @@ def main():
     mat = read_matrix_market(sys.argv[1]) if sys.argv[1].endswith(".mm") else read_raw_matrix(sys.argv[1])
     print_matrix(mat, label="Matrix", precision=4)
 
-    Q, R = np.linalg.qr(mat)
-    print_matrix(Q, label="Q")
-    print_matrix(R, label="R")
+    conjugated = np.matrix.conjugate(mat)
+    print_matrix(conjugated, label="CONJUGATE")
 
 
 if __name__ == '__main__':
