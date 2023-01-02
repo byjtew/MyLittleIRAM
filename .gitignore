@@ -712,3 +712,5 @@ cython_debug/
 
 matrices/**
 matrices/
+!scripts/**
+!scripts/
