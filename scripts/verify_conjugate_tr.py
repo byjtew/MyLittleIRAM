@@ -15,6 +15,9 @@ def main():
     conjugated = np.matrix.conjugate(mat)
     print_matrix(conjugated, label="CONJUGATE")
 
+    transposed = np.matrix.transpose(mat)
+    print_matrix(transposed, label="TRANSPOSE")
+
 
 if __name__ == '__main__':
     main()
