@@ -31,7 +31,7 @@ typedef struct eigenData_s
 matrix_t matrix_create(const size_t n_row, const size_t n_column);
 vector_t vector_create(const size_t n);
 
-matrix_t matrix_copy(const matrix_t *matrix);
+matrix_t matrix_copy(matrix_t *dest, const matrix_t *src);
 vector_t vector_copy(const vector_t *vector);
 
 matrix_t matrix_generateRandom(const size_t n_row, const size_t n_column);

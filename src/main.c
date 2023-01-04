@@ -8,6 +8,20 @@
 
 #include "mymath.h"
 
+
+void print_results(eigenData_t eigen) {
+  printf("Eigenvalues:\n");
+  for (size_t i = 0; i < eigen.eigen_val_r.n; i++) {
+    printf("%ld: %f + %fi\n", i, eigen.eigen_val_r.data[i], eigen.eigen_val_i.data[i]);
+    printf("\t");
+    for (size_t j = 0; j < eigen.eigen_vec.column; j++) {
+      printf("%f ", eigen.eigen_vec.data[i * eigen.eigen_vec.column + j]);
+    }
+    printf("\n");
+  }
+
+}
+
 int main(int argc, char **argv)
 {
   srand(getpid());
@@ -15,7 +29,7 @@ int main(int argc, char **argv)
   matrix_t A;
 
   if (argc == 2) {
-    A = matrix_readFromFile("../mat.dat");
+    A = matrix_readFromFile(argv[1]);
   } else if (argc == 3) {
     int x = atoi(argv[1]);
     int y = atoi(argv[2]);
@@ -33,16 +47,8 @@ int main(int argc, char **argv)
   matrix_print(&A);
   printf("\n\n");
 
-  eigenData_t eigen = IRAM(&A, 3, 10, 1e-12f);
-
-  printf("Eigenvalues:\n");
-  printf("Real:\n");
-  vector_print(&eigen.eigen_val_r);
-  printf("Imaginary:\n");
-  vector_print(&eigen.eigen_val_i);
-  printf("\n\n");
-  printf("Eigenvectors:\n");
-  matrix_print(&eigen.eigen_vec);
+  eigenData_t eigen = IRAM(&A, 3, 500, 1e-12f);
+  print_results(eigen);
 
   matrix_free(&A);
   matrix_free(&eigen.eigen_vec);

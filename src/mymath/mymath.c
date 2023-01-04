@@ -25,13 +25,14 @@ vector_t vector_create(const size_t n) {
   return res;
 }
 
-matrix_t matrix_copy(const matrix_t *matrix) {
-  assert(matrix);
+matrix_t matrix_copy(matrix_t *dest, const matrix_t *src) {
+  assert(src && dest);
+  assert(dest->row == src->row && dest->column == src->column);
+  assert(dest->data && src->data);
 
-  matrix_t res = matrix_create(matrix->row, matrix->column);
-  memcpy(res.data, matrix->data, sizeof(double) * matrix->row * matrix->column);
+  memcpy(dest->data, src->data, sizeof(double) * src->row * src->column);
 
-  return res;
+  return *dest;
 }
 
 vector_t vector_copy(const vector_t *vector) {
@@ -281,8 +282,9 @@ void arnoldiProjection(size_t start_step, const matrix_t *A, const vector_t *f,
         V->data[k * V->column + i] =
             buf.data[i] / H->data[(k - 1) * H->column + k];
     } else
-      return;
+      break;
   }
+  vector_free(&buf);
 }
 
 void ERAM_computeEigenSubspace(const matrix_t *H,
@@ -333,6 +335,7 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
   const size_t m = 3 * n_eigen;
   const size_t k = m - n_eigen;
 
+  // Create a random starting vector
   vector_t f = vector_generateRandom(A->row);
 
   matrix_t V = matrix_create(m + 1, A->row);
@@ -340,6 +343,18 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
 
   matrix_t T = matrix_create(H.row, H.column);
   matrix_t Z = matrix_create(H.row, H.row);
+
+
+  // We need a copy of H later on
+  matrix_t H_copy = matrix_create(m, m + 1);
+
+  // QR decomposition matrices
+  matrix_t Q = matrix_create(m, m);
+  matrix_t R = matrix_create(m, m);
+
+  // Buffers for QR decomposition and dgemm
+  matrix_t res = matrix_create(m, m);
+  matrix_t res_final = matrix_create(m, m + 1);
 
   eigenData_t eigen;
   eigen.eigen_val_r = vector_create(m);
@@ -369,47 +384,45 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
 
     count_iter++;
     if (fabs(error) < max_error || count_iter > max_iter) {
-      printf("itération : %ld\nerror : %lf\n", count_iter, fabs(error));
+      printf("itération : %ld / max_iter: %ld\nerror : %lf / max error: %lf\n", count_iter, max_iter, fabs(error), max_error);
       break;
     }
 
     double *mu = eigen.eigen_val_r.data + n_eigen;
 
-    // Create Identity matrix
-    matrix_t Q = matrix_create(m, m);
+    //Q is the identity matrix
     matrix_fill(&Q, 0.0);
     for (size_t i = 0; i < Q.row; i++)
       Q.data[i * Q.column + i] = 1.0;
 
     for (size_t i = 0; i < k; i++) {
+
       // Copy H
+      matrix_copy(&H_copy, &H);
+
       // H - ujI
-
-      matrix_t H_copy = matrix_copy(&H);
-
-
       for (size_t j = 0; j < H.row; j++)
         H_copy.data[j * H_copy.column + j] -= mu[i];
 
-      matrix_t R = matrix_create(H_copy.row, H_copy.column - 1);
-      matrix_print(&H_copy);
+      // QR decomposition
+      // Here, R contains elementary reflectors, and R is contained in
+      // lower triangular part of H_copy
       LAPACKE_dgeqrf(LAPACK_COL_MAJOR, H_copy.row, H_copy.column - 1, H_copy.data, H_copy.column, R.data);
+      // Compute Qj from elementary reflectors and store it in H_copy
       LAPACKE_dorgqr(LAPACK_COL_MAJOR, H_copy.row, H_copy.column - 1, H_copy.column - 1, H_copy.data, H_copy.column, R.data);
 
+      // Make an alias for clarity
       matrix_t Qj;
       Qj.row = H_copy.row;
       Qj.column = H_copy.column;
       Qj.data = H_copy.data;
 
-      // H = Qj(conjugué) * H * Qj;
       printf("ICI 1: \n");
       printf("Qj: \n");
       matrix_print(&Qj);
       printf("H: \n");
       matrix_print(&H);
-
-      matrix_t res = matrix_create(Qj.row, H.column - 1);
-
+      // Compute Qj* x H
       cblas_dgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans, 
                   Qj.row, H.column - 1, Qj.column - 1, 
                   1.0, 
@@ -420,10 +433,8 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
       printf("Qj * H = : \n");
       matrix_print(&res);
 
-      matrix_t res_final = matrix_create(Qj.row, H.column);
-      
-      
       printf("ICI 2: \n");
+      // Compute (Qj* x H) x Qj
       cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 
                   res.row, Qj.column - 1, res.column, 
                   1.0, 
@@ -431,13 +442,16 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
                   Qj.data, Qj.column, 
                   0.0,
                   res_final.data, res_final.column);
-      
+      // Swap H and res_final
+      matrix_t buf = H;
       H = res_final;
+      res_final = buf;
 
       // Q = Q * Qj
       matrix_print(&Q);
       matrix_print(&Qj);
       printf("ICI 3: \n");
+      // Compute Q = Q x Qj
       cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 
                   Q.row, Qj.column - 1, Q.column, 
                   1.0, 
@@ -445,7 +459,10 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
                   Qj.data, Qj.column,
                   0.0, 
                   res.data, res.column);
+      // Swap Q and res
+      buf = Q;
       Q = res;
+      res = buf;
       matrix_print(&Q);
     }
 
@@ -482,6 +499,13 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
   matrix_free(&H);
   matrix_free(&T);
   matrix_free(&Z);
+
+
+  matrix_free(&H_copy);
+  matrix_free(&Q);
+  matrix_free(&R);
+  matrix_free(&res);
+  matrix_free(&res_final);
 
   return eigen;
 }
