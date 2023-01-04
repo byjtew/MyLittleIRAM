@@ -2,6 +2,7 @@ import sys
 import numpy as np
 from _matrix_functions import read_matrix_market, read_raw_matrix, print_matrix
 
+
 def main():
     if len(sys.argv) < 2:
         print(f"Usage: \n"
@@ -11,9 +12,12 @@ def main():
     mat = read_matrix_market(sys.argv[1]) if sys.argv[1].endswith(".mm") else read_raw_matrix(sys.argv[1])
     print_matrix(mat, label="Matrix", precision=4)
 
-    w, v = np.linalg.eig(mat)
-    print("Eigenvalues:", w)
-    print("Eigenvectors:", v)
+    conjugated = np.matrix.conjugate(mat)
+    print_matrix(conjugated, label="CONJUGATE")
+
+    transposed = np.matrix.transpose(mat)
+    print_matrix(transposed, label="TRANSPOSE")
+
 
 if __name__ == '__main__':
     main()
