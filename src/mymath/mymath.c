@@ -158,7 +158,7 @@ void vector_print(const vector_t *vector) {
     printf("%lf\n", vector->data[i]);
 }
 
-const double vector_dotProduct(const vector_t *x, const vector_t *y) {
+double vector_dotProduct(const vector_t *x, const vector_t *y) {
   assert(x->n == y->n);
 
   double res = 0.0;
@@ -168,7 +168,7 @@ const double vector_dotProduct(const vector_t *x, const vector_t *y) {
   return res;
 }
 
-const double vector_raw_dotProduct(const double *x, const double *y,
+double vector_raw_dotProduct(const double *x, const double *y,
                                    const size_t n) {
   assert(x);
   assert(y);
@@ -217,7 +217,7 @@ void matrix_raw_dotProduct(const double *matrix, const double *vector,
   }
 }
 
-const double vector_norme(const vector_t *x) {
+double vector_norme(const vector_t *x) {
   double res = 0.0;
 
   for (size_t i = 0; i < x->n; i++) {
@@ -226,7 +226,7 @@ const double vector_norme(const vector_t *x) {
   return sqrt(res);
 }
 
-const double vector_raw_norme(const double *x, const size_t n) {
+double vector_raw_norme(const double *x, const size_t n) {
   double res = 0.0;
 
   for (size_t i = 0; i < n; i++) {
@@ -235,7 +235,7 @@ const double vector_raw_norme(const double *x, const size_t n) {
   return sqrt(res);
 }
 
-const double matrix_norme(const matrix_t *x) {
+double matrix_norme(const matrix_t *x) {
   double res = 0.0;
 
   for (size_t i = 0; i < x->row; i++) {
@@ -300,7 +300,7 @@ void ERAM_computeEigenSubspace(const matrix_t *H,
                  NULL, 1, Z->data, Z->row, Z->column, &m);
 }
 
-const double ERAM_computeError(const matrix_t *eigen_vectors,
+double ERAM_computeError(const matrix_t *eigen_vectors,
                                const double h_factor) {
   double error = 0.0;
   for (size_t i = 0; i < eigen_vectors->row; i++)

@@ -1,19 +1,19 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(lab LANGUAGES C)
+project(MPNA LANGUAGES C)
 
-set(CMAKE_C_FLAGS "-march=native -Wall")
+# Set compiler flags
+include(CheckCCompilerFlag)
 
-find_package(OpenMP REQUIRED)
+# Enable all warnings
+set(CMAKE_C_FLAGS "-Wall -Wextra -Wpedantic")
 
-# set(BLA_VENDOR Intel10_64ilp_seq)
-set(BLA_VENDOR OpenBLAS)
+check_c_compiler_flag(-march=native HAS_MARCH_NATIVE)
 
-find_package(LAPACK REQUIRED)
-find_package(BLAS REQUIRED)
+if (HAS_MARCH_NATIVE)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+endif()
 
-add_subdirectory(mmio)
-add_subdirectory(mymath)
 
-add_executable(main main.c)
-target_link_libraries(main mymath BLAS::BLAS LAPACK::LAPACK)
+add_subdirectory(src)
+

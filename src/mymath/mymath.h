@@ -55,16 +55,16 @@ vector_t vector_write(FILE *file);
 void matrix_print(const matrix_t *matrix);
 void vector_print(const vector_t *vector);
 
-const double vector_dotProduct(const vector_t *x, const vector_t *y);
-const double vector_raw_dotProduct(const double *x, const double *y, const size_t n);
+double vector_dotProduct(const vector_t *x, const vector_t *y);
+double vector_raw_dotProduct(const double *x, const double *y, const size_t n);
 
 vector_t matrix_dotProduct(const matrix_t *matrix, const vector_t *vector);
 void matrix_raw_dotProduct(const double *matrix, const double *vector, double *outVector, const size_t m, const size_t n);
 
-const double vector_norme(const vector_t *x);
-const double vector_raw_norme(const double *x, const size_t n);
+double vector_norme(const vector_t *x);
+double vector_raw_norme(const double *x, const size_t n);
 
-const double matrix_norme(const matrix_t *x);
+double matrix_norme(const matrix_t *x);
 
 /**
  * @brief Arnoldi projection algo
