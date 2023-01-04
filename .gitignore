@@ -1,5 +1,7 @@
-### VisualStudioCode template
-.vscode/*
+### IDE related
+.vscode
+.idea
+
 # Local History for Visual Studio Code
 .history/
 

@@ -7,6 +7,7 @@
 #include <lapacke.h>
 #include <cblas.h>
 #include <float.h>
+#include <string.h>
 
 typedef struct vector_s
 {
@@ -16,7 +17,7 @@ typedef struct vector_s
 
 typedef struct matrix_s
 {
-  size_t row, colunm;
+  size_t row, column;
   double *data;
 } matrix_t;
 
@@ -29,6 +30,9 @@ typedef struct eigenData_s
 
 matrix_t matrix_create(const size_t n_row, const size_t n_column);
 vector_t vector_create(const size_t n);
+
+matrix_t matrix_copy(const matrix_t *matrix);
+vector_t vector_copy(const vector_t *vector);
 
 matrix_t matrix_generateRandom(const size_t n_row, const size_t n_column);
 vector_t vector_generateRandom(const size_t n);
@@ -71,7 +75,7 @@ const double matrix_norme(const matrix_t *x);
  * @param Q Output matrix subspace+1*n
  * @param h Output matrix subspace*subspace+1
  */
-void arnoldiProjection(const matrix_t *A, const vector_t *b, const size_t subspace, const matrix_t *Q, const matrix_t *h);
+void arnoldiProjection(size_t start_step, const matrix_t *A, const vector_t *f,
+                       const size_t m, const matrix_t *V, const matrix_t *H) ;
 
-
-eigenData_t ERAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter, const double max_error);
+eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter, const double max_error);

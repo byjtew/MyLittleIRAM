@@ -12,14 +12,14 @@ int main(int argc, char **argv)
 {
   srand(getpid());
 
-  //matrix_t A = matrix_readFromFile("../data/mat.dat");
-  matrix_t A = matrix_readFromFile("../data/mat_verif1.dat");
-  //matrix_t A = matrix_generateRandom(30, 30);
+  matrix_t A = matrix_readFromFile("../mat.dat");
+  // matrix_t A = matrix_readFromFile("../data/mat_verif1.dat");
+  // matrix_t A = matrix_generateRandom(10, 10);
 
   matrix_print(&A);
   printf("\n\n");
 
-  eigenData_t eigen = ERAM(&A, 3, 500, 0.0001);
+  eigenData_t eigen = IRAM(&A, 3, 10, 1e-12f);
 
   vector_print(&eigen.eigen_val_r);
   vector_print(&eigen.eigen_val_i);
