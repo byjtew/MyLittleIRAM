@@ -35,19 +35,18 @@ int main(int argc, char **argv)
     int y = atoi(argv[2]);
     A = matrix_generateRandom(x, y);
   } else {
-    A = matrix_generateRandom(10, 10);
+    A = matrix_generateRandom(50, 50);
   }
 
   if (A.data == NULL) {
     printf("Error: matrix is NULL\n");
-
   }
 
   printf("Matrix A:\n");
   matrix_print(&A);
   printf("\n\n");
 
-  eigenData_t eigen = IRAM(&A, 3, 500, 1e-12f);
+  eigenData_t eigen = IRAM(&A, 3, 5000, 1e-6f);
   print_results(eigen);
 
   matrix_free(&A);
