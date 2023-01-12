@@ -46,7 +46,7 @@ int main(int argc, char **argv)
   matrix_print(&A);
   printf("\n\n");
 
-  eigenData_t eigen = IRAM(&A, 4, 5000, 1e-12);
+  eigenData_t eigen = IRAM(&A, 3, 9000, 1e-12);
   print_results(eigen);
 
   matrix_free(&A);

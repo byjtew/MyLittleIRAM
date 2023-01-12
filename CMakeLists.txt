@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 
 project(MPNA LANGUAGES C)
 
+# Set C standard to 11
+set(CMAKE_C_STANDARD 11)
+
 # Set compiler flags
 include(CheckCCompilerFlag)
 

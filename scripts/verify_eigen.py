@@ -12,9 +12,10 @@ def main():
     print_matrix(mat, label="Matrix", precision=4)
 
     w, v = np.linalg.eig(mat)
+    #w = w[w[:, 0].argsort()]
+    w = np.sort_complex(w)
     for i, e in enumerate(w):
         print(f"{i}: {e}")
-        print(f"\t: {v[i]}")
 
 if __name__ == '__main__':
     main()
