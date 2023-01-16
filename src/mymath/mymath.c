@@ -1,10 +1,12 @@
 #include "mymath.h"
 
-static inline int MAT_GET_CMAJOR(matrix_t m, int r, int c) {
+static inline int MAT_GET_CMAJOR(matrix_t m, int r, int c)
+{
   return (int)c * m.row + r;
 }
 
-matrix_t matrix_create(const size_t n_row, const size_t n_column) {
+matrix_t matrix_create(const size_t n_row, const size_t n_column)
+{
   matrix_t res;
 
   res.data = malloc(sizeof(double) * n_row * n_column);
@@ -17,7 +19,8 @@ matrix_t matrix_create(const size_t n_row, const size_t n_column) {
   return res;
 }
 
-vector_t vector_create(const size_t n) {
+vector_t vector_create(const size_t n)
+{
   vector_t res;
 
   res.data = malloc(sizeof(double) * n);
@@ -29,7 +32,8 @@ vector_t vector_create(const size_t n) {
   return res;
 }
 
-matrix_t matrix_copy(matrix_t *dest, const matrix_t *src) {
+matrix_t matrix_copy(matrix_t *dest, const matrix_t *src)
+{
   assert(src && dest);
   assert(dest->row == src->row && dest->column == src->column);
   assert(dest->data && src->data);
@@ -39,7 +43,8 @@ matrix_t matrix_copy(matrix_t *dest, const matrix_t *src) {
   return *dest;
 }
 
-vector_t vector_copy(const vector_t *vector) {
+vector_t vector_copy(const vector_t *vector)
+{
   assert(vector);
 
   vector_t res = vector_create(vector->n);
@@ -48,50 +53,59 @@ vector_t vector_copy(const vector_t *vector) {
   return res;
 }
 
-matrix_t matrix_generateRandom(const size_t n_row, const size_t n_column) {
+matrix_t matrix_generateRandom(const size_t n_row, const size_t n_column)
+{
   matrix_t res = matrix_create(n_row, n_column);
 
-  for (size_t i = 0; i < n_row * n_column; i++) {
+  for (size_t i = 0; i < n_row * n_column; i++)
+  {
     res.data[i] = (double)rand() / (double)RAND_MAX;
   }
 
   return res;
 }
 
-vector_t vector_generateRandom(const size_t n) {
+vector_t vector_generateRandom(const size_t n)
+{
   vector_t res = vector_create(n);
 
-  for (size_t i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++)
+  {
     res.data[i] = (double)rand() / (double)RAND_MAX;
   }
 
   return res;
 }
 
-void matrix_fill(const matrix_t *matrix, const double value) {
+void matrix_fill(const matrix_t *matrix, const double value)
+{
   assert(matrix);
 
   assert(matrix->data);
   assert(matrix->row != 0);
   assert(matrix->column != 0);
 
-  for (size_t i = 0; i < matrix->row * matrix->column; i++) {
+  for (size_t i = 0; i < matrix->row * matrix->column; i++)
+  {
     matrix->data[i] = value;
   }
 }
 
-void vector_fill(const vector_t *vector, const double value) {
+void vector_fill(const vector_t *vector, const double value)
+{
   assert(vector);
 
   assert(vector->data);
   assert(vector->n != 0);
 
-  for (size_t i = 0; i < vector->n; i++) {
+  for (size_t i = 0; i < vector->n; i++)
+  {
     vector->data[i] = value;
   }
 }
 
-void matrix_free(matrix_t *matrix) {
+void matrix_free(matrix_t *matrix)
+{
   assert(matrix);
 
   free(matrix->data);
@@ -99,7 +113,8 @@ void matrix_free(matrix_t *matrix) {
   matrix->row = matrix->column = 0;
 }
 
-void vector_free(vector_t *vector) {
+void vector_free(vector_t *vector)
+{
   assert(vector);
 
   free(vector->data);
@@ -107,34 +122,39 @@ void vector_free(vector_t *vector) {
   vector->n = 0;
 }
 
-matrix_t matrix_read(FILE *file) {
+matrix_t matrix_read(FILE *file)
+{
   matrix_t res;
   size_t n_row, n_column;
 
   fscanf(file, "%lu %lu", &n_row, &n_column);
   res = matrix_create(n_row, n_column);
 
-  for (size_t i = 0; i < n_row * n_column; i++) {
+  for (size_t i = 0; i < n_row * n_column; i++)
+  {
     fscanf(file, "%lf", res.data + i);
   }
 
   return res;
 }
 
-vector_t vector_read(FILE *file) {
+vector_t vector_read(FILE *file)
+{
   vector_t res;
   unsigned n;
   fscanf(file, "%u", &n);
   res = vector_create(n);
 
-  for (size_t i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++)
+  {
     fscanf(file, "%lf", res.data + i);
   }
 
   return res;
 }
 
-matrix_t matrix_readFromFile(const char *filename) {
+matrix_t matrix_readFromFile(const char *filename)
+{
   FILE *fp = fopen(filename, "r");
   assert(fp != NULL);
 
@@ -144,7 +164,8 @@ matrix_t matrix_readFromFile(const char *filename) {
   return res;
 }
 
-vector_t vector_readFromFile(const char *filename) {
+vector_t vector_readFromFile(const char *filename)
+{
   FILE *fp = fopen(filename, "r");
   assert(fp != NULL);
 
@@ -153,56 +174,68 @@ vector_t vector_readFromFile(const char *filename) {
   return vec;
 }
 
-void matrix_print(const matrix_t *matrix) {
+void matrix_print(const matrix_t *matrix)
+{
   printf("[%lu, %lu]\n", matrix->row, matrix->column);
-  for (size_t i = 0; i < matrix->row; i++) {
-    for (size_t j = 0; j < matrix->column; j++) {
+  for (size_t i = 0; i < matrix->row; i++)
+  {
+    for (size_t j = 0; j < matrix->column; j++)
+    {
       printf("%lf ", matrix->data[i * matrix->column + j]);
     }
     printf("\n");
   }
 }
 
-void matrix_print_colmajor(const matrix_t *matrix) {
+void matrix_print_colmajor(const matrix_t *matrix)
+{
   printf("[%lu, %lu]\n", matrix->row, matrix->column);
-  for (size_t i = 0; i < matrix->row; i++) {
+  for (size_t i = 0; i < matrix->row; i++)
+  {
     for (size_t j = 0; j < matrix->column; j++)
       printf("%lf ", matrix->data[MAT_GET_CMAJOR(*matrix, i, j)]);
     printf("\n");
   }
 }
 
-void vector_print(const vector_t *vector) {
+void vector_print(const vector_t *vector)
+{
   printf("[%lu]\n", vector->n);
-  for (size_t i = 0; i < vector->n; i++) {
+  for (size_t i = 0; i < vector->n; i++)
+  {
     printf("%lf\n", vector->data[i]);
   }
 }
 
-double vector_dotProduct(const vector_t *x, const vector_t *y) {
+double vector_dotProduct(const vector_t *x, const vector_t *y)
+{
   assert(x->n == y->n);
 
   double res = 0.0;
-  for (size_t i = 0; i < x->n; i++) {
+  for (size_t i = 0; i < x->n; i++)
+  {
     res += x->data[i] * y->data[i];
   }
 
   return res;
 }
 
-double vector_raw_dotProduct(const double *x, const double *y, const size_t n) {
+double vector_raw_dotProduct(const double *x, const double *y, const size_t n)
+{
   assert(x);
   assert(y);
 
   double res = 0.0;
-  for (size_t i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++)
+  {
     res += x[i] * y[i];
   }
 
   return res;
 }
 
-vector_t matrix_dotProduct(const matrix_t *matrix, const vector_t *vector) {
+vector_t matrix_dotProduct(const matrix_t *matrix, const vector_t *vector)
+{
   assert(matrix);
   assert(vector);
   assert(matrix->row == matrix->column);
@@ -211,9 +244,11 @@ vector_t matrix_dotProduct(const matrix_t *matrix, const vector_t *vector) {
   const size_t size = matrix->row;
   vector_t res = vector_create(size);
 
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++)
+  {
     res.data[i] = 0.0;
-    for (size_t j = 0; j < size; j++) {
+    for (size_t j = 0; j < size; j++)
+    {
       res.data[i] += matrix->data[i * size + j] * vector->data[j];
     }
   }
@@ -222,7 +257,8 @@ vector_t matrix_dotProduct(const matrix_t *matrix, const vector_t *vector) {
 }
 
 void matrix_raw_dotProduct(const double *matrix, const double *vector,
-                           double *outVector, const size_t m, const size_t n) {
+                           double *outVector, const size_t m, const size_t n)
+{
   // matrix (m*n)
   // vector (1*n)
 
@@ -233,56 +269,67 @@ void matrix_raw_dotProduct(const double *matrix, const double *vector,
 
   const size_t size = m;
 
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++)
+  {
     outVector[i] = 0.0;
-    for (size_t j = 0; j < size; j++) {
+    for (size_t j = 0; j < size; j++)
+    {
       outVector[i] += matrix[i * size + j] * vector[j];
     }
   }
 }
 
-double vector_norme(const vector_t *x) {
+double vector_norme(const vector_t *x)
+{
   double res = 0.0;
 
-  for (size_t i = 0; i < x->n; i++) {
+  for (size_t i = 0; i < x->n; i++)
+  {
     res += x->data[i] * x->data[i];
   }
   return sqrt(res);
 }
 
-double vector_raw_norme(const double *x, const size_t n) {
+double vector_raw_norme(const double *x, const size_t n)
+{
   double res = 0.0;
 
-  for (size_t i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++)
+  {
     res += x[i] * x[i];
   }
   return sqrt(res);
 }
 
-double matrix_norme(const matrix_t *x) {
+double matrix_norme(const matrix_t *x)
+{
   double res = 0.0;
 
-  for (size_t i = 0; i < x->row; i++) {
-    for (size_t j = 0; j < x->column; j++) {
+  for (size_t i = 0; i < x->row; i++)
+  {
+    for (size_t j = 0; j < x->column; j++)
+    {
       res += x->data[i * x->column + j] * x->data[i * x->column + j];
     }
   }
   return sqrt(res);
 }
 
-void eigen_sort(const eigenData_t *eigen) {
+void eigen_sort(const eigenData_t *eigen, const vector_t *buffer)
+{
   const size_t size = eigen->eigen_val_r.n;
 
-  vector_t buffer = vector_create(size);
-
-  for (size_t j = 0; j < size; j++) {
+  for (size_t j = 0; j < size; j++)
+  {
     double max = eigen->eigen_val_r.data[j] * eigen->eigen_val_r.data[j] +
                  eigen->eigen_val_i.data[j] * eigen->eigen_val_i.data[j];
     size_t index = j;
-    for (size_t i = j; i < size; i++) {
+    for (size_t i = j; i < size; i++)
+    {
       double tmp = eigen->eigen_val_r.data[i] * eigen->eigen_val_r.data[i] +
                    eigen->eigen_val_i.data[i] * eigen->eigen_val_i.data[i];
-      if (max < tmp) {
+      if (max < tmp)
+      {
         max = tmp;
         index = i;
       }
@@ -296,18 +343,18 @@ void eigen_sort(const eigenData_t *eigen) {
     eigen->eigen_val_i.data[j] = eigen->eigen_val_i.data[index];
     eigen->eigen_val_i.data[index] = tmp;
 
-    memcpy(buffer.data, eigen->eigen_vec.data + (size * j),
+    memcpy(buffer->data, eigen->eigen_vec.data + (size * j),
            size * sizeof(double));
     memcpy(eigen->eigen_vec.data + (size * j),
            eigen->eigen_vec.data + (size * index), size * sizeof(double));
     memcpy(eigen->eigen_vec.data + (size * index),
            eigen->eigen_vec.data + (size * j), size * sizeof(double));
   }
-  vector_free(&buffer);
 }
 
 void arnoldiProjection(size_t start_step, const matrix_t *A, const vector_t *f,
-                       const size_t m, const matrix_t *V, const matrix_t *H) {
+                       const size_t m, const matrix_t *V, const matrix_t *H, const vector_t *buffer)
+{
   assert(A && f && V && H);
 
   assert(A->row == A->column && A->row == f->n);
@@ -317,48 +364,55 @@ void arnoldiProjection(size_t start_step, const matrix_t *A, const vector_t *f,
   const size_t size = A->row;
   const double kEpsilon = 1e-12;
 
-  if (start_step == 1) {
-    const double norme_b = 1.0 / vector_norme(f);
-    for (size_t i = 0; i < size; i++) {
+  if (start_step == 1)
+  {
+    const double norme_b = 1.0 / cblas_dnrm2(f->n, f->data, 1);
+    for (size_t i = 0; i < size; i++)
+    {
       V->data[i] = f->data[i] * norme_b;
     }
   }
 
-  vector_t buf = vector_create(size);
+  for (size_t k = start_step; k < m + 1; k++)
+  {
+    cblas_dgemv(CblasColMajor, CblasNoTrans, A->row, A->column,
+                1.0, A->data, A->row, V->data + ((k - 1) * V->row),
+                1, 0.0, buffer->data, 1);
 
-  for (size_t k = start_step; k < m + 1; k++) {
-    matrix_raw_dotProduct(A->data, V->data + ((k - 1) * V->row), buf.data,
-                          A->row, A->column);
+    for (size_t j = 0; j < k; j++)
+    {
+      H->data[MAT_GET_CMAJOR(*H, j, (k - 1))] = cblas_ddot(size, V->data + (j * V->row), 1, buffer->data, 1);
 
-    for (size_t j = 0; j < k; j++) {
-      H->data[MAT_GET_CMAJOR(*H, j, (k - 1))] =
-          vector_raw_dotProduct(V->data + (j * V->row), buf.data, size);
-
-      for (size_t i = 0; i < buf.n; i++) {
-        buf.data[i] = buf.data[i] - H->data[MAT_GET_CMAJOR(*H, j, (k - 1))] *
-                                        V->data[MAT_GET_CMAJOR(*V, i, j)];
+      for (size_t i = 0; i < buffer->n; i++)
+      {
+        buffer->data[i] = buffer->data[i] - H->data[MAT_GET_CMAJOR(*H, j, (k - 1))] *
+                                                V->data[MAT_GET_CMAJOR(*V, i, j)];
       }
     }
-    H->data[MAT_GET_CMAJOR(*H, k, (k - 1))] = vector_norme(&buf);
+    H->data[MAT_GET_CMAJOR(*H, k, (k - 1))] = cblas_dnrm2(buffer->n, buffer->data, 1);
 
-    if (H->data[MAT_GET_CMAJOR(*H, k, (k - 1))] > kEpsilon) {
-      for (size_t i = 0; i < A->column; i++) {
-        V->data[MAT_GET_CMAJOR(*V, i, k)] =
-            buf.data[i] / H->data[MAT_GET_CMAJOR(*H, k, (k - 1))];
+    if (H->data[MAT_GET_CMAJOR(*H, k, (k - 1))] > kEpsilon)
+    {
+      const double tmp = 1.0 / H->data[MAT_GET_CMAJOR(*H, k, (k - 1))];
+      for (size_t i = 0; i < A->column; i++)
+      {
+        V->data[MAT_GET_CMAJOR(*V, i, k)] = buffer->data[i] * tmp;
       }
-    } else {
-      printf("Arnoldi: breaking because norme < tol, norme = %lf, k = %i\n",
+    }
+    else
+    {
+      printf("Arnoldi: breaking because norme < tol, norme = %lf, k = %lu\n",
              H->data[MAT_GET_CMAJOR(*H, k, (k - 1))], k);
       break;
     }
   }
-  vector_free(&buf);
 }
 
 void ERAM_computeEigenSubspace(const matrix_t *H,
                                const vector_t *eigen_values_r,
                                const vector_t *eigen_values_i,
-                               const matrix_t *Z) {
+                               const matrix_t *Z)
+{
   // T Z eigenValue = computeEigenValue(h)
   matrix_print_colmajor(H);
   LAPACKE_dhseqr(LAPACK_COL_MAJOR, 'S', 'I', H->column, 1, H->column, H->data,
@@ -372,9 +426,11 @@ void ERAM_computeEigenSubspace(const matrix_t *H,
 }
 
 double ERAM_computeError(size_t k, const matrix_t *eigen_vectors,
-                         const double h_factor) {
+                         const double h_factor)
+{
   double error = 0.0;
-  for (size_t i = 0; i < k; i++) {
+  for (size_t i = 0; i < k; i++)
+  {
     error += fabs(eigen_vectors->data[MAT_GET_CMAJOR(
         *eigen_vectors, (eigen_vectors->column - 1), i)]);
   }
@@ -383,25 +439,27 @@ double ERAM_computeError(size_t k, const matrix_t *eigen_vectors,
 }
 
 void ERAM_computeNewInputVector(const vector_t *input,
-                                const matrix_t *eigen_vectors) {
-  for (size_t i = 0; i < input->n; i++) {
+                                const matrix_t *eigen_vectors)
+{
+  for (size_t i = 0; i < input->n; i++)
+  {
     input->data[i] = 0.0;
   }
 
-  for (size_t i = 0; i < eigen_vectors->row; i++) {
+  for (size_t i = 0; i < eigen_vectors->row; i++)
+  {
     cblas_daxpy(eigen_vectors->column, 1.0,
                 eigen_vectors->data + (i * eigen_vectors->column), 1,
                 input->data, 1);
   }
 
-  double norm = vector_raw_norme(input->data, input->n);
-  for (size_t i = 0; i < input->n; i++) {
-    input->data[i] *= norm;
-  }
+  const double norm = cblas_dnrm2(input->n, input->data, 1);
+  cblas_dscal(input->n, norm, input->data, 1);
 }
 
 eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
-                 const double max_error) {
+                 const double max_error)
+{
 
   // Number of wanted eigen values
   const size_t k = n_eigen;
@@ -427,7 +485,7 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
 
   // QR decomposition matrices
   matrix_t Q = matrix_create(m, m);
-  double *tau = (double *)malloc(m * sizeof(double));
+  vector_t tau = vector_create(m);
 
   // Buffers for QR decomposition and dgemm
   matrix_t res = matrix_create(m, m);
@@ -439,17 +497,24 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
   eigen.eigen_val_i = vector_create(m);
   eigen.eigen_vec = matrix_create(A->row, m);
 
+  // Buffer for eigen sort
+  vector_t buffer_eigen_sort = vector_create(eigen.eigen_val_r.n);
+
+  // Buffer for arnoldi projection
+  vector_t buffer_arnoldi = vector_create(A->row);
+
   double residual = DBL_MAX;
   size_t count_iter = 0;
 
   // Bootstrap the algorithm with a full Arnoldi method
-  arnoldiProjection(1, A, &f, m, &V, &H);
+  arnoldiProjection(1, A, &f, m, &V, &H, &buffer_arnoldi);
 
-  while (1) {
+  while (1)
+  {
     count_iter++;
 
     // if (count_iter == 2)
-      // break;
+    // break;
     // matrix_print_colmajor(&H);
 
     // Save H(m, m + 1) for later
@@ -466,7 +531,7 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
                 Z.column, 1.0, Z.data, Z.column, V.data, V.row, 0.0,
                 eigen.eigen_vec.data, eigen.eigen_vec.column);
 
-    eigen_sort(&eigen);
+    eigen_sort(&eigen, &buffer_eigen_sort);
     // for (int i = 0; i < m; i++) {
     //  printf("Eigen Value: %lf %lf\n", eigen.eigen_val_r.data[i],
     //         eigen.eigen_val_i.data[i]);
@@ -475,7 +540,8 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
     // Compute the residual error of the K first eigenvalues
     residual = ERAM_computeError(k, &eigen.eigen_vec, h_factor);
 
-    if (residual < max_error || count_iter > max_iter) {
+    if (residual < max_error || count_iter > max_iter)
+    {
       matrix_print_colmajor(&H);
       printf("H factor when breaking: %lf\n", h_factor);
       break;
@@ -485,19 +551,22 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
 
     // Q is the identity matrix
     matrix_fill(&Q, 0.0);
-    for (size_t i = 0; i < Q.row; i++) {
+    for (size_t i = 0; i < Q.row; i++)
+    {
       Q.data[MAT_GET_CMAJOR(Q, i, i)] = 1.0;
     }
 
     // Perform an implicitly shifted QR decomposition using the unwanted
     // eigenvalues as shifts
-    for (size_t i = 0; i < p; i++) {
+    for (size_t i = 0; i < p; i++)
+    {
 
       // Copy H
       matrix_copy(&H_copy, &H);
 
       // H - ujI
-      for (size_t j = 0; j < H.column; j++) {
+      for (size_t j = 0; j < H.column; j++)
+      {
         H_copy.data[MAT_GET_CMAJOR(H_copy, j, j)] -= mu[i];
       }
       // matrix_print_colmajor(&H_copy);
@@ -505,10 +574,10 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
       // QR decomposition
       // Here, tau contains elementary reflectors
       LAPACKE_dgeqrf(LAPACK_COL_MAJOR, H_copy.row - 1, H_copy.column,
-                     H_copy.data, H_copy.row, tau);
+                     H_copy.data, H_copy.row, tau.data);
       // Compute Qj from elementary reflectors and store it in H_copy
       LAPACKE_dorgqr(LAPACK_COL_MAJOR, H_copy.row - 1, H_copy.column,
-                     H_copy.column, H_copy.data, H_copy.row, tau);
+                     H_copy.column, H_copy.data, H_copy.row, tau.data);
       // From here on, H_copy contains Qj
 
       // Make an alias for clarity
@@ -563,7 +632,8 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
     // printf("Beta: %f\n", kBeta);
     //  exit(1);
     const double kSigma = Q.data[MAT_GET_CMAJOR(Q, m, k)];
-    for (size_t i = 0; i < f.n; i++) {
+    for (size_t i = 0; i < f.n; i++)
+    {
       f.data[i] = V.data[MAT_GET_CMAJOR(V, V.column - 1, i)] * kBeta +
                   f.data[i] * kSigma;
     }
@@ -582,15 +652,17 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
     // matrix_print_colmajor(&V);
 
     // Update H
-    for (size_t y = k; y < H.row; y++) {
-      for (size_t x = k; x < H.column; x++) {
+    for (size_t y = k; y < H.row; y++)
+    {
+      for (size_t x = k; x < H.column; x++)
+      {
         H.data[MAT_GET_CMAJOR(H, x, y)] = .0;
       }
     }
     //  Selection des shifts
     //  Decomposition QR k fois
     //  Update de V et A, et f (vecteur d'entrée)
-    arnoldiProjection(k, A, &f, m, &V, &H);
+    arnoldiProjection(k, A, &f, m, &V, &H, &buffer_arnoldi);
     // Restart
   }
 
@@ -602,9 +674,12 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
 
   matrix_free(&H_copy);
   matrix_free(&Q);
-  free(tau);
+  vector_free(&tau);
   matrix_free(&res);
   matrix_free(&res_final);
+
+  vector_free(&buffer_eigen_sort);
+  vector_free(&buffer_arnoldi);
 
   printf("Done !\n");
   printf("H: \n");

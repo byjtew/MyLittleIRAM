@@ -76,6 +76,6 @@ double matrix_norme(const matrix_t *x);
  * @param h Output matrix subspace*subspace+1
  */
 void arnoldiProjection(size_t start_step, const matrix_t *A, const vector_t *f,
-                       const size_t m, const matrix_t *V, const matrix_t *H) ;
+                       const size_t m, const matrix_t *V, const matrix_t *H, const vector_t* buffer);
 
 eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter, const double max_error);
