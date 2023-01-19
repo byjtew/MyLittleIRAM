@@ -54,5 +54,21 @@ int main(int argc, char **argv)
   vector_free(&eigen.eigen_val_r);
   vector_free(&eigen.eigen_val_i);
 
+  /*size_t m = 3;
+
+  matrix_t A = matrix_readFromFile(argv[1]);
+  vector_t b = vector_readFromFile(argv[2]);
+  
+  matrix_t V = matrix_create(A.row, m + 1);
+  matrix_t H = matrix_create(m + 1, m);
+
+  matrix_print(&A);
+  vector_print(&b);
+
+  arnoldiProjection(1, &A, &b, m, &V, &H);
+
+  matrix_print(&V);
+  matrix_print(&H);*/
+
   return 0;
 }
