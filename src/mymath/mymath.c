@@ -482,19 +482,12 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
   {
     count_iter++;
 
-    // if (count_iter == 2)
-    // break;
-    // matrix_print_colmajor(&H);
-
     // Save H(m, m + 1) for later
     const double h_factor = buffer.H.data[MAT_GET_CMAJOR(buffer.H, buffer.H.row - 1, buffer.H.column - 1)];
 
     // Compute the eigenvalues/eigenvectors in the subspace, using H
-    matrix_print_colmajor(&buffer.H);
     matrix_copy(&buffer.H_copy, &buffer.H);
     IRAM_computeEigenSubspace(&buffer.H_copy, &eigen.eigen_val_r, &eigen.eigen_val_i, &buffer.Z);
-    // vector_print(&eigen.eigen_val_r);
-    // vector_print(&eigen.eigen_val_i);
 
     // Retro-projection of the eigenvectors in the original space by multiplying
     // Z and V
@@ -504,17 +497,12 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
 
     // eigen_sort(&eigen, &buffer.buffer_eigen_sort);
     eigen_sort(&eigen, &buffer.buffer_eigen_sort);
-    for (int i = 0; i < m; i++) {
-       printf("Eigen Value: %lf %lf\n", eigen.eigen_val_r.data[i],
-              eigen.eigen_val_i.data[i]);
-    }
 
     // Compute the residual error of the K first eigenvalues
     residual = IRAM_computeError(k, &eigen.eigen_vec, h_factor);
 
     if (residual < max_error || count_iter > max_iter)
     {
-      matrix_print_colmajor(&buffer.H);
       printf("H factor when breaking: %lf\n", h_factor);
       break;
     }
@@ -533,8 +521,6 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
     for (size_t i = 0; i < p; i++)
     {
 
-      // printf("mu_j: %lf\n", mu[i]);
-
       // Copy H
       matrix_copy(&buffer.H_copy, &buffer.H);
 
@@ -543,11 +529,6 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
       {
         buffer.H_copy.data[MAT_GET_CMAJOR(buffer.H_copy, j, j)] -= mu[i];
       }
-      //printf("H:\n");
-      //matrix_print_colmajor(&buffer.H);
-      //printf("mu_j: %lf\n", mu[i]);
-      //printf("H - muI:\n");
-      //matrix_print_colmajor(&buffer.H_copy);
 
       // QR decomposition
       // Here, tau contains elementary reflectors
@@ -559,9 +540,6 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
                      buffer.H_copy.column, buffer.H_copy.data, buffer.H_copy.row, buffer.tau.data);
 
       // From here on, H_copy contains Qj
-      //printf("Qj:\n");
-      //matrix_print_colmajor(&buffer.H_copy);
-      //exit(1);
 
       // Make an alias for clarity
       matrix_t Qj;
@@ -569,19 +547,11 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
       Qj.column = buffer.H_copy.column;
       Qj.data = buffer.H_copy.data;
 
-      // printf("ICI 1: \n");
-      // printf("Qj: \n");
-      // matrix_print_colmajor(&Qj);
-      // printf("H: \n");
-      // matrix_print_colmajor(&H);
       // Compute Qj* x H
       cblas_dgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, Qj.row - 1, buffer.H.column,
                   Qj.column, 1.0, Qj.data, Qj.row, buffer.H.data, buffer.H.row, 0.0, buffer.res.data,
                   buffer.res.row);
-      // printf("Qj * H = : \n");
-      //  matrix_print_colmajor(&res);
 
-      // printf("ICI 2: \n");
       //  Compute (Qj* x H) x Qj
       cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, buffer.res.row, Qj.column,
                   buffer.res.column, 1.0, buffer.res.data, buffer.res.column, Qj.data, Qj.row, 0.0,
@@ -591,10 +561,6 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
       buffer.H = buffer.res_final;
       buffer.res_final = buf;
 
-      // Q = Q * Qj
-      // matrix_print_colmajor(&Q);
-      // matrix_print_colmajor(&Qj);
-      // printf("ICI 3: \n");
       // Compute Q = Q x Qj
       cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, buffer.Q.row, Qj.column,
                   buffer.Q.row, 1.0, buffer.Q.data, buffer.Q.row, Qj.data, Qj.row, 0.0, buffer.res.data,
@@ -603,38 +569,24 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
       buf = buffer.Q;
       buffer.Q = buffer.res;
       buffer.res = buf;
-      // matrix_print_colmajor(&Q);
     }
 
-    // printf("ma petite partie crash pas\n");
 
     // Update f
     const double kBeta = buffer.H.data[MAT_GET_CMAJOR(buffer.H, k + 1, k)];
-/*     printf("Hm: \n");
-    matrix_print_colmajor(&buffer.H);
-    exit(1); */
-    // printf("Beta: %f\n", kBeta);
     const double kSigma = buffer.Q.data[MAT_GET_CMAJOR(buffer.Q, m, k)];
-    //matrix_print_colmajor(&buffer.Q);
     for (size_t i = 0; i < buffer.f.n; i++)
     {
       buffer.f.data[i] = buffer.V.data[MAT_GET_CMAJOR(buffer.V, i, buffer.V.column - 1)] * kBeta +
                   buffer.f.data[i] * kSigma;
     }
-    // exit(1);
 
-    // Update V
-    // printf("ICI 4: \n");
-    // matrix_print_colmajor(&V);
-    // matrix_print_colmajor(&Q);
     matrix_t new_v = matrix_create(buffer.V.row, buffer.V.column);
     cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, buffer.V.row, k,
                 buffer.V.column - 1, 1.0, buffer.V.data, buffer.V.row, buffer.Q.data, buffer.Q.row, 0.0,
                 new_v.data, new_v.row);
     matrix_free(&buffer.V);
     buffer.V = new_v;
-    // printf("V post erase: \n");
-    // matrix_print_colmajor(&V);
 
     // Update H
     for (size_t y = k; y < buffer.H.row; y++)
@@ -653,9 +605,6 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
 
   bufferIRAM_free(&buffer);
 
-  printf("Done !\n");
-  printf("H: \n");
-  matrix_print_colmajor(&buffer.H);
   printf("itération : %ld / max_iter: %ld\nerror : %lf / max error: %lf\n",
          count_iter, max_iter, fabs(residual), max_error);
 
