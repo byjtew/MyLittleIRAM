@@ -364,13 +364,10 @@ void arnoldiProjection(size_t start_step, const matrix_t *A, const vector_t *f,
   const size_t size = A->row;
   const double kEpsilon = 1e-12;
 
-  if (start_step == 1)
+  const double norme_b = 1.0 / cblas_dnrm2(f->n, f->data, 1);
+  for (size_t i = 0; i < size; i++)
   {
-    const double norme_b = 1.0 / cblas_dnrm2(f->n, f->data, 1);
-    for (size_t i = 0; i < size; i++)
-    {
-      V->data[i] = f->data[i] * norme_b;
-    }
+    V->data[i] = f->data[i] * norme_b;
   }
 
   for (size_t k = start_step; k < m + 1; k++)
@@ -414,7 +411,6 @@ void ERAM_computeEigenSubspace(const matrix_t *H,
                                const matrix_t *Z)
 {
   // T Z eigenValue = computeEigenValue(h)
-  matrix_print_colmajor(H);
   LAPACKE_dhseqr(LAPACK_COL_MAJOR, 'S', 'I', H->column, 1, H->column, H->data,
                  H->row, eigen_values_r->data, eigen_values_i->data, Z->data,
                  Z->row);
@@ -438,25 +434,6 @@ double ERAM_computeError(size_t k, const matrix_t *eigen_vectors,
   return fabs(error);
 }
 
-void ERAM_computeNewInputVector(const vector_t *input,
-                                const matrix_t *eigen_vectors)
-{
-  for (size_t i = 0; i < input->n; i++)
-  {
-    input->data[i] = 0.0;
-  }
-
-  for (size_t i = 0; i < eigen_vectors->row; i++)
-  {
-    cblas_daxpy(eigen_vectors->column, 1.0,
-                eigen_vectors->data + (i * eigen_vectors->column), 1,
-                input->data, 1);
-  }
-
-  const double norm = cblas_dnrm2(input->n, input->data, 1);
-  cblas_dscal(input->n, norm, input->data, 1);
-}
-
 eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
                  const double max_error)
 {
@@ -464,7 +441,7 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
   // Number of wanted eigen values
   const size_t k = n_eigen;
   // Subspace size
-  const size_t m = 3 * k;
+  const size_t m = 2 * k;
   // Supplementary dimensions
   // (Difference between wanted n eigen values and subspace size)
   const size_t p = m - k;
@@ -592,7 +569,7 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
       // printf("H: \n");
       // matrix_print_colmajor(&H);
       // Compute Qj* x H
-      cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, Qj.row - 1, H.column,
+      cblas_dgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, Qj.row - 1, H.column,
                   Qj.column, 1.0, Qj.data, Qj.row, H.data, H.row, 0.0, res.data,
                   res.row);
       // printf("Qj * H = : \n");
@@ -627,16 +604,18 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
 
     // Update f
     const double kBeta = H.data[MAT_GET_CMAJOR(H, k + 1, k)];
-    // printf("Hm: \n");
-    // matrix_print_colmajor(&H);
+    printf("Hm: \n");
+    matrix_print_colmajor(&H);
     // printf("Beta: %f\n", kBeta);
-    //  exit(1);
     const double kSigma = Q.data[MAT_GET_CMAJOR(Q, m, k)];
+    printf("Sigma %lf Beta %lf\n", kSigma, kBeta);
     for (size_t i = 0; i < f.n; i++)
     {
-      f.data[i] = V.data[MAT_GET_CMAJOR(V, V.column - 1, i)] * kBeta +
+      f.data[i] = V.data[MAT_GET_CMAJOR(V, i, V.column - 1)] * kBeta +
                   f.data[i] * kSigma;
+      printf("f[%d] = %f\n", i, f.data[i]);
     }
+    exit(1);
 
     // Update V
     // printf("ICI 4: \n");
@@ -656,7 +635,7 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
     {
       for (size_t x = k; x < H.column; x++)
       {
-        H.data[MAT_GET_CMAJOR(H, x, y)] = .0;
+        H.data[MAT_GET_CMAJOR(H, y, x)] = .0;
       }
     }
     //  Selection des shifts
