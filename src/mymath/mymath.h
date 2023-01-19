@@ -12,13 +12,13 @@
 typedef struct vector_s
 {
   size_t n;
-  double *data;
+  double *restrict data;
 } vector_t;
 
 typedef struct matrix_s
 {
   size_t row, column;
-  double *data;
+  double *restrict data;
 } matrix_t;
 
 typedef struct eigenData_s
@@ -31,40 +31,29 @@ typedef struct eigenData_s
 matrix_t matrix_create(const size_t n_row, const size_t n_column);
 vector_t vector_create(const size_t n);
 
-matrix_t matrix_copy(matrix_t *dest, const matrix_t *src);
-vector_t vector_copy(const vector_t *vector);
+matrix_t matrix_copy(matrix_t *restrict dest, const matrix_t *restrict src);
+vector_t vector_copy(const vector_t *restrict vector);
 
 matrix_t matrix_generateRandom(const size_t n_row, const size_t n_column);
 vector_t vector_generateRandom(const size_t n);
 
-void matrix_fill(const matrix_t *matrix, const double value);
-void vector_fill(const vector_t *vector, const double value);
+void matrix_fill(const matrix_t *restrict matrix, const double value);
+void vector_fill(const vector_t *restrict vector, const double value);
 
-void matrix_free(matrix_t *matrix);
-void vector_free(vector_t *vector);
+void matrix_free(matrix_t *restrict matrix);
+void vector_free(vector_t *restrict vector);
 
-matrix_t matrix_read(FILE *file);
-vector_t vector_read(FILE *file);
+matrix_t matrix_read(FILE *restrict file);
+vector_t vector_read(FILE *restrict file);
 
-matrix_t matrix_readFromFile(const char *filename);
-vector_t vector_readFromFile(const char *filename);
+matrix_t matrix_readFromFile(const char *restrict filename);
+vector_t vector_readFromFile(const char *restrict filename);
 
-matrix_t matrix_write(FILE *file);
-vector_t vector_write(FILE *file);
+matrix_t matrix_write(FILE *restrict file);
+vector_t vector_write(FILE *restrict file);
 
-void matrix_print(const matrix_t *matrix);
-void vector_print(const vector_t *vector);
-
-double vector_dotProduct(const vector_t *x, const vector_t *y);
-double vector_raw_dotProduct(const double *x, const double *y, const size_t n);
-
-vector_t matrix_dotProduct(const matrix_t *matrix, const vector_t *vector);
-void matrix_raw_dotProduct(const double *matrix, const double *vector, double *outVector, const size_t m, const size_t n);
-
-double vector_norme(const vector_t *x);
-double vector_raw_norme(const double *x, const size_t n);
-
-double matrix_norme(const matrix_t *x);
+void matrix_print(const matrix_t *restrict matrix);
+void vector_print(const vector_t *restrict vector);
 
 /**
  * @brief Arnoldi projection algo
@@ -75,7 +64,8 @@ double matrix_norme(const matrix_t *x);
  * @param Q Output matrix subspace+1*n
  * @param h Output matrix subspace*subspace+1
  */
-void arnoldiProjection(size_t start_step, const matrix_t *A, const vector_t *f,
-                       const size_t m, const matrix_t *V, const matrix_t *H, const vector_t* buffer);
+void arnoldiProjection(size_t start_step, const matrix_t *restrict A, const vector_t *restrict f,
+                       const size_t m, const matrix_t *restrict V, const matrix_t *restrict H,
+                       const vector_t *restrict buffer);
 
-eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter, const double max_error);
+eigenData_t IRAM(const matrix_t *restrict A, const size_t n_eigen, const size_t max_iter, const double max_error);

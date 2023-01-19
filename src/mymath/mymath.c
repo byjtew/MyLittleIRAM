@@ -32,7 +32,7 @@ vector_t vector_create(const size_t n)
   return res;
 }
 
-matrix_t matrix_copy(matrix_t *dest, const matrix_t *src)
+matrix_t matrix_copy(matrix_t *restrict dest, const matrix_t *restrict src)
 {
   assert(src && dest);
   assert(dest->row == src->row && dest->column == src->column);
@@ -43,7 +43,7 @@ matrix_t matrix_copy(matrix_t *dest, const matrix_t *src)
   return *dest;
 }
 
-vector_t vector_copy(const vector_t *vector)
+vector_t vector_copy(const vector_t *restrict vector)
 {
   assert(vector);
 
@@ -77,7 +77,7 @@ vector_t vector_generateRandom(const size_t n)
   return res;
 }
 
-void matrix_fill(const matrix_t *matrix, const double value)
+void matrix_fill(const matrix_t *restrict matrix, const double value)
 {
   assert(matrix);
 
@@ -91,7 +91,7 @@ void matrix_fill(const matrix_t *matrix, const double value)
   }
 }
 
-void vector_fill(const vector_t *vector, const double value)
+void vector_fill(const vector_t *restrict vector, const double value)
 {
   assert(vector);
 
@@ -104,7 +104,7 @@ void vector_fill(const vector_t *vector, const double value)
   }
 }
 
-void matrix_free(matrix_t *matrix)
+void matrix_free(matrix_t *restrict matrix)
 {
   assert(matrix);
 
@@ -113,7 +113,7 @@ void matrix_free(matrix_t *matrix)
   matrix->row = matrix->column = 0;
 }
 
-void vector_free(vector_t *vector)
+void vector_free(vector_t *restrict vector)
 {
   assert(vector);
 
@@ -122,7 +122,7 @@ void vector_free(vector_t *vector)
   vector->n = 0;
 }
 
-matrix_t matrix_read(FILE *file)
+matrix_t matrix_read(FILE *restrict file)
 {
   matrix_t res;
   size_t n_row, n_column;
@@ -138,7 +138,7 @@ matrix_t matrix_read(FILE *file)
   return res;
 }
 
-vector_t vector_read(FILE *file)
+vector_t vector_read(FILE *restrict file)
 {
   vector_t res;
   unsigned n;
@@ -153,7 +153,7 @@ vector_t vector_read(FILE *file)
   return res;
 }
 
-matrix_t matrix_readFromFile(const char *filename)
+matrix_t matrix_readFromFile(const char *restrict filename)
 {
   FILE *fp = fopen(filename, "r");
   assert(fp != NULL);
@@ -164,7 +164,7 @@ matrix_t matrix_readFromFile(const char *filename)
   return res;
 }
 
-vector_t vector_readFromFile(const char *filename)
+vector_t vector_readFromFile(const char *restrict filename)
 {
   FILE *fp = fopen(filename, "r");
   assert(fp != NULL);
@@ -174,7 +174,7 @@ vector_t vector_readFromFile(const char *filename)
   return vec;
 }
 
-void matrix_print(const matrix_t *matrix)
+void matrix_print(const matrix_t *restrict matrix)
 {
   printf("[%lu, %lu]\n", matrix->row, matrix->column);
   for (size_t i = 0; i < matrix->row; i++)
@@ -187,7 +187,7 @@ void matrix_print(const matrix_t *matrix)
   }
 }
 
-void matrix_print_colmajor(const matrix_t *matrix)
+void matrix_print_colmajor(const matrix_t *restrict matrix)
 {
   printf("[%lu, %lu]\n", matrix->row, matrix->column);
   for (size_t i = 0; i < matrix->row; i++)
@@ -198,7 +198,7 @@ void matrix_print_colmajor(const matrix_t *matrix)
   }
 }
 
-void vector_print(const vector_t *vector)
+void vector_print(const vector_t *restrict vector)
 {
   printf("[%lu]\n", vector->n);
   for (size_t i = 0; i < vector->n; i++)
@@ -207,115 +207,7 @@ void vector_print(const vector_t *vector)
   }
 }
 
-double vector_dotProduct(const vector_t *x, const vector_t *y)
-{
-  assert(x->n == y->n);
-
-  double res = 0.0;
-  for (size_t i = 0; i < x->n; i++)
-  {
-    res += x->data[i] * y->data[i];
-  }
-
-  return res;
-}
-
-double vector_raw_dotProduct(const double *x, const double *y, const size_t n)
-{
-  assert(x);
-  assert(y);
-
-  double res = 0.0;
-  for (size_t i = 0; i < n; i++)
-  {
-    res += x[i] * y[i];
-  }
-
-  return res;
-}
-
-vector_t matrix_dotProduct(const matrix_t *matrix, const vector_t *vector)
-{
-  assert(matrix);
-  assert(vector);
-  assert(matrix->row == matrix->column);
-  assert(matrix->row == vector->n);
-
-  const size_t size = matrix->row;
-  vector_t res = vector_create(size);
-
-  for (size_t i = 0; i < size; i++)
-  {
-    res.data[i] = 0.0;
-    for (size_t j = 0; j < size; j++)
-    {
-      res.data[i] += matrix->data[i * size + j] * vector->data[j];
-    }
-  }
-
-  return res;
-}
-
-void matrix_raw_dotProduct(const double *matrix, const double *vector,
-                           double *outVector, const size_t m, const size_t n)
-{
-  // matrix (m*n)
-  // vector (1*n)
-
-  assert(matrix);
-  assert(vector);
-  assert(m != 0);
-  assert(n != 0);
-
-  const size_t size = m;
-
-  for (size_t i = 0; i < size; i++)
-  {
-    outVector[i] = 0.0;
-    for (size_t j = 0; j < size; j++)
-    {
-      outVector[i] += matrix[i * size + j] * vector[j];
-    }
-  }
-}
-
-double vector_norme(const vector_t *x)
-{
-  double res = 0.0;
-
-  for (size_t i = 0; i < x->n; i++)
-  {
-    res += x->data[i] * x->data[i];
-  }
-  return sqrt(res);
-}
-
-double vector_raw_norme(const double *x, const size_t n)
-{
-  double res = 0.0;
-
-  for (size_t i = 0; i < n; i++)
-  {
-    res += x[i] * x[i];
-  }
-  return sqrt(res);
-}
-
-double matrix_norme(const matrix_t *x)
-{
-  double res = 0.0;
-
-  for (size_t i = 0; i < x->row; i++)
-  {
-    for (size_t j = 0; j < x->column; j++)
-    {
-      res += x->data[i * x->column + j] * x->data[i * x->column + j];
-    }
-  }
-  return sqrt(res);
-}
-
-void eigen_sort(const eigenData_t *eigen, const vector_t *buffer)
+void eigen_sort(const eigenData_t *restrict eigen, const vector_t *restrict buffer)
 {
   const size_t size = eigen->eigen_val_r.n;
 
@@ -352,8 +244,129 @@ void eigen_sort(const eigenData_t *eigen, const vector_t *buffer)
   }
 }
 
-void arnoldiProjection(size_t start_step, const matrix_t *A, const vector_t *f,
-                       const size_t m, const matrix_t *V, const matrix_t *H, const vector_t *buffer)
+void swap(const size_t index1, const size_t index2, const eigenData_t *restrict eigen, const vector_t *restrict buffer)
+{
+  const size_t size = eigen->eigen_val_r.n;
+
+  double tmp = eigen->eigen_val_r.data[index1];
+  eigen->eigen_val_r.data[index1] = eigen->eigen_val_r.data[index2];
+  eigen->eigen_val_r.data[index2] = tmp;
+
+  tmp = eigen->eigen_val_i.data[index1];
+  eigen->eigen_val_i.data[index1] = eigen->eigen_val_i.data[index2];
+  eigen->eigen_val_i.data[index2] = tmp;
+
+  memcpy(buffer->data, eigen->eigen_vec.data + (size * index1), size * sizeof(double));
+  memcpy(eigen->eigen_vec.data + (size * index1), eigen->eigen_vec.data + (size * index2), size * sizeof(double));
+  memcpy(eigen->eigen_vec.data + (size * index2), buffer->data, size * sizeof(double));
+}
+
+size_t partition(const eigenData_t *restrict eigen, const vector_t *restrict buffer, const size_t low, const size_t high)
+{
+  const double pivot = eigen->eigen_val_r.data[high];
+  size_t i = low;
+
+  for (size_t j = low; j <= high - 1; j++)
+  {
+    if (eigen->eigen_val_r.data[j] >= pivot)
+    {
+      swap(i, j, eigen, buffer);
+      i++;
+    }
+  }
+  swap(i, high, eigen, buffer);
+  return i;
+}
+
+void eigenQuickSort(const eigenData_t *restrict eigen, const vector_t *restrict buffer, const size_t low, const size_t high)
+{
+  if (low < high)
+  {
+    size_t pi = partition(eigen, buffer, low, high);
+    eigenQuickSort(eigen, buffer, low, pi - 1);
+    eigenQuickSort(eigen, buffer, pi + 1, high);
+  }
+}
+
+typedef struct bufferIRAM_s
+{
+  vector_t f;
+
+  // Projection matrix
+  matrix_t V;
+  // Hessenberg matrix (Projection of A in the subspace)
+  matrix_t H;
+  // We need a copy of H later on
+  matrix_t H_copy;
+
+  matrix_t T;
+  matrix_t Z;
+
+  // QR decomposition matrices
+  matrix_t Q;
+  vector_t tau;
+
+  // Buffers for QR decomposition and dgemm
+  matrix_t res;
+  matrix_t res_final;
+
+  // Buffer for eigen sort
+  vector_t buffer_eigen_sort;
+
+  // Buffer for arnoldi projection
+  vector_t buffer_arnoldi;
+} bufferIRAM_t;
+
+bufferIRAM_t bufferIRAM_init(const size_t inputSizeA, const size_t subspaceSize)
+{
+  bufferIRAM_t res;
+  res.f = vector_generateRandom(inputSizeA);
+
+  // Projection matrix
+  res.V = matrix_create(inputSizeA, subspaceSize + 1);
+  // Hessenberg matrix (Projection of A in the subspace)
+  res.H = matrix_create(subspaceSize + 1, subspaceSize);
+  // We need a copy of H later on
+  res.H_copy = matrix_create(subspaceSize + 1, subspaceSize);
+
+  res.T = matrix_create(res.H.row, res.H.column);
+  res.Z = matrix_create(subspaceSize, subspaceSize);
+
+  // QR decomposition matrices
+  res.Q = matrix_create(subspaceSize, subspaceSize);
+  res.tau = vector_create(subspaceSize);
+
+  // Buffers for QR decomposition and dgemm
+  res.res = matrix_create(subspaceSize, subspaceSize);
+  res.res_final = matrix_create(subspaceSize + 1, subspaceSize);
+
+  // Buffer for eigen sort
+  res.buffer_eigen_sort = vector_create(subspaceSize);
+
+  // Buffer for arnoldi projection
+  res.buffer_arnoldi = vector_create(inputSizeA);
+
+  return res;
+}
+
+void bufferIRAM_free(bufferIRAM_t *restrict buffer)
+{
+  vector_free(&buffer->f);
+  matrix_free(&buffer->V);
+  matrix_free(&buffer->H);
+  matrix_free(&buffer->H_copy);
+  matrix_free(&buffer->T);
+  matrix_free(&buffer->Z);
+  matrix_free(&buffer->Q);
+  vector_free(&buffer->tau);
+  matrix_free(&buffer->res);
+  matrix_free(&buffer->res_final);
+  vector_free(&buffer->buffer_eigen_sort);
+  vector_free(&buffer->buffer_arnoldi);
+}
+
+void arnoldiProjection(size_t start_step, const matrix_t *restrict A, const vector_t *restrict f,
+                       const size_t m, const matrix_t *restrict V, const matrix_t *restrict H, const vector_t *restrict buffer)
 {
   assert(A && f && V && H);
 
@@ -364,10 +377,13 @@ void arnoldiProjection(size_t start_step, const matrix_t *A, const vector_t *f,
   const size_t size = A->row;
   const double kEpsilon = 1e-12;
 
-  const double norme_b = 1.0 / cblas_dnrm2(f->n, f->data, 1);
-  for (size_t i = 0; i < size; i++)
+  if (start_step == 1)
   {
-    V->data[i] = f->data[i] * norme_b;
+    const double norme_b = 1.0 / cblas_dnrm2(f->n, f->data, 1);
+    for (size_t i = 0; i < size; i++)
+    {
+      V->data[i] = f->data[i] * norme_b;
+    }
   }
 
   for (size_t k = start_step; k < m + 1; k++)
@@ -405,10 +421,10 @@ void arnoldiProjection(size_t start_step, const matrix_t *A, const vector_t *f,
   }
 }
 
-void ERAM_computeEigenSubspace(const matrix_t *H,
-                               const vector_t *eigen_values_r,
-                               const vector_t *eigen_values_i,
-                               const matrix_t *Z)
+void IRAM_computeEigenSubspace(const matrix_t *restrict H,
+                               const vector_t *restrict eigen_values_r,
+                               const vector_t *restrict eigen_values_i,
+                               const matrix_t *restrict Z)
 {
   // T Z eigenValue = computeEigenValue(h)
   LAPACKE_dhseqr(LAPACK_COL_MAJOR, 'S', 'I', H->column, 1, H->column, H->data,
@@ -421,7 +437,7 @@ void ERAM_computeEigenSubspace(const matrix_t *H,
                  NULL, 1, Z->data, Z->row, Z->column, &m);
 }
 
-double ERAM_computeError(size_t k, const matrix_t *eigen_vectors,
+double IRAM_computeError(size_t k, const matrix_t *restrict eigen_vectors,
                          const double h_factor)
 {
   double error = 0.0;
@@ -434,6 +450,7 @@ double ERAM_computeError(size_t k, const matrix_t *eigen_vectors,
   return fabs(error);
 }
 
+
 eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
                  const double max_error)
 {
@@ -441,32 +458,13 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
   // Number of wanted eigen values
   const size_t k = n_eigen;
   // Subspace size
-  const size_t m = 2 * k;
+  const size_t m = 3 * k;
   // Supplementary dimensions
   // (Difference between wanted n eigen values and subspace size)
   const size_t p = m - k;
 
-  // Allocate all matrices to avoid memory allocation during the algorithm
-  // Create a random starting vector
-  vector_t f = vector_generateRandom(A->row);
-
-  // Projection matrix
-  matrix_t V = matrix_create(A->row, m + 1);
-  // Hessenberg matrix (Projection of A in the subspace)
-  matrix_t H = matrix_create(m + 1, m);
-  // We need a copy of H later on
-  matrix_t H_copy = matrix_create(m + 1, m);
-
-  matrix_t T = matrix_create(H.row, H.column);
-  matrix_t Z = matrix_create(m, m);
-
-  // QR decomposition matrices
-  matrix_t Q = matrix_create(m, m);
-  vector_t tau = vector_create(m);
-
-  // Buffers for QR decomposition and dgemm
-  matrix_t res = matrix_create(m, m);
-  matrix_t res_final = matrix_create(m + 1, m);
+  // Allocate buffer for IRAM
+  bufferIRAM_t buffer = bufferIRAM_init(A->row, m);
 
   // Final eigenvalues/vectors returned by the algorithm
   eigenData_t eigen;
@@ -474,17 +472,11 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
   eigen.eigen_val_i = vector_create(m);
   eigen.eigen_vec = matrix_create(A->row, m);
 
-  // Buffer for eigen sort
-  vector_t buffer_eigen_sort = vector_create(eigen.eigen_val_r.n);
-
-  // Buffer for arnoldi projection
-  vector_t buffer_arnoldi = vector_create(A->row);
-
   double residual = DBL_MAX;
   size_t count_iter = 0;
 
   // Bootstrap the algorithm with a full Arnoldi method
-  arnoldiProjection(1, A, &f, m, &V, &H, &buffer_arnoldi);
+  arnoldiProjection(1, A, &buffer.f, m, &buffer.V, &buffer.H, &buffer.buffer_arnoldi);
 
   while (1)
   {
@@ -495,31 +487,34 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
     // matrix_print_colmajor(&H);
 
     // Save H(m, m + 1) for later
-    const double h_factor = H.data[MAT_GET_CMAJOR(H, H.row - 1, H.column - 1)];
+    const double h_factor = buffer.H.data[MAT_GET_CMAJOR(buffer.H, buffer.H.row - 1, buffer.H.column - 1)];
 
     // Compute the eigenvalues/eigenvectors in the subspace, using H
-    ERAM_computeEigenSubspace(&H, &eigen.eigen_val_r, &eigen.eigen_val_i, &Z);
+    matrix_print_colmajor(&buffer.H);
+    matrix_copy(&buffer.H_copy, &buffer.H);
+    IRAM_computeEigenSubspace(&buffer.H_copy, &eigen.eigen_val_r, &eigen.eigen_val_i, &buffer.Z);
     // vector_print(&eigen.eigen_val_r);
     // vector_print(&eigen.eigen_val_i);
 
     // Retro-projection of the eigenvectors in the original space by multiplying
     // Z and V
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Z.row, V.column - 1,
-                Z.column, 1.0, Z.data, Z.column, V.data, V.row, 0.0,
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, buffer.Z.row, buffer.V.column - 1,
+                buffer.Z.column, 1.0, buffer.Z.data, buffer.Z.column, buffer.V.data, buffer.V.row, 0.0,
                 eigen.eigen_vec.data, eigen.eigen_vec.column);
 
-    eigen_sort(&eigen, &buffer_eigen_sort);
-    // for (int i = 0; i < m; i++) {
-    //  printf("Eigen Value: %lf %lf\n", eigen.eigen_val_r.data[i],
-    //         eigen.eigen_val_i.data[i]);
-    // }
+    // eigen_sort(&eigen, &buffer.buffer_eigen_sort);
+    eigen_sort(&eigen, &buffer.buffer_eigen_sort);
+    for (int i = 0; i < m; i++) {
+       printf("Eigen Value: %lf %lf\n", eigen.eigen_val_r.data[i],
+              eigen.eigen_val_i.data[i]);
+    }
 
     // Compute the residual error of the K first eigenvalues
-    residual = ERAM_computeError(k, &eigen.eigen_vec, h_factor);
+    residual = IRAM_computeError(k, &eigen.eigen_vec, h_factor);
 
     if (residual < max_error || count_iter > max_iter)
     {
-      matrix_print_colmajor(&H);
+      matrix_print_colmajor(&buffer.H);
       printf("H factor when breaking: %lf\n", h_factor);
       break;
     }
@@ -527,10 +522,10 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
     double *mu = eigen.eigen_val_r.data + k;
 
     // Q is the identity matrix
-    matrix_fill(&Q, 0.0);
-    for (size_t i = 0; i < Q.row; i++)
+    matrix_fill(&buffer.Q, 0.0);
+    for (size_t i = 0; i < buffer.Q.row; i++)
     {
-      Q.data[MAT_GET_CMAJOR(Q, i, i)] = 1.0;
+      buffer.Q.data[MAT_GET_CMAJOR(buffer.Q, i, i)] = 1.0;
     }
 
     // Perform an implicitly shifted QR decomposition using the unwanted
@@ -538,30 +533,41 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
     for (size_t i = 0; i < p; i++)
     {
 
+      // printf("mu_j: %lf\n", mu[i]);
+
       // Copy H
-      matrix_copy(&H_copy, &H);
+      matrix_copy(&buffer.H_copy, &buffer.H);
 
       // H - ujI
-      for (size_t j = 0; j < H.column; j++)
+      for (size_t j = 0; j < buffer.H.column; j++)
       {
-        H_copy.data[MAT_GET_CMAJOR(H_copy, j, j)] -= mu[i];
+        buffer.H_copy.data[MAT_GET_CMAJOR(buffer.H_copy, j, j)] -= mu[i];
       }
-      // matrix_print_colmajor(&H_copy);
+      //printf("H:\n");
+      //matrix_print_colmajor(&buffer.H);
+      //printf("mu_j: %lf\n", mu[i]);
+      //printf("H - muI:\n");
+      //matrix_print_colmajor(&buffer.H_copy);
 
       // QR decomposition
       // Here, tau contains elementary reflectors
-      LAPACKE_dgeqrf(LAPACK_COL_MAJOR, H_copy.row - 1, H_copy.column,
-                     H_copy.data, H_copy.row, tau.data);
+
+      LAPACKE_dgeqrf(LAPACK_COL_MAJOR, buffer.H_copy.row - 1, buffer.H_copy.column,
+                     buffer.H_copy.data, buffer.H_copy.row, buffer.tau.data);
       // Compute Qj from elementary reflectors and store it in H_copy
-      LAPACKE_dorgqr(LAPACK_COL_MAJOR, H_copy.row - 1, H_copy.column,
-                     H_copy.column, H_copy.data, H_copy.row, tau.data);
+      LAPACKE_dorgqr(LAPACK_COL_MAJOR, buffer.H_copy.row - 1, buffer.H_copy.column,
+                     buffer.H_copy.column, buffer.H_copy.data, buffer.H_copy.row, buffer.tau.data);
+
       // From here on, H_copy contains Qj
+      //printf("Qj:\n");
+      //matrix_print_colmajor(&buffer.H_copy);
+      //exit(1);
 
       // Make an alias for clarity
       matrix_t Qj;
-      Qj.row = H_copy.row;
-      Qj.column = H_copy.column;
-      Qj.data = H_copy.data;
+      Qj.row = buffer.H_copy.row;
+      Qj.column = buffer.H_copy.column;
+      Qj.data = buffer.H_copy.data;
 
       // printf("ICI 1: \n");
       // printf("Qj: \n");
@@ -569,100 +575,87 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
       // printf("H: \n");
       // matrix_print_colmajor(&H);
       // Compute Qj* x H
-      cblas_dgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, Qj.row - 1, H.column,
-                  Qj.column, 1.0, Qj.data, Qj.row, H.data, H.row, 0.0, res.data,
-                  res.row);
+      cblas_dgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, Qj.row - 1, buffer.H.column,
+                  Qj.column, 1.0, Qj.data, Qj.row, buffer.H.data, buffer.H.row, 0.0, buffer.res.data,
+                  buffer.res.row);
       // printf("Qj * H = : \n");
       //  matrix_print_colmajor(&res);
 
       // printf("ICI 2: \n");
       //  Compute (Qj* x H) x Qj
-      cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, res.row, Qj.column,
-                  res.column, 1.0, res.data, res.column, Qj.data, Qj.row, 0.0,
-                  res_final.data, res_final.row);
+      cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, buffer.res.row, Qj.column,
+                  buffer.res.column, 1.0, buffer.res.data, buffer.res.column, Qj.data, Qj.row, 0.0,
+                  buffer.res_final.data, buffer.res_final.row);
       // Swap H and res_final
-      matrix_t buf = H;
-      H = res_final;
-      res_final = buf;
+      matrix_t buf = buffer.H;
+      buffer.H = buffer.res_final;
+      buffer.res_final = buf;
 
       // Q = Q * Qj
       // matrix_print_colmajor(&Q);
       // matrix_print_colmajor(&Qj);
       // printf("ICI 3: \n");
       // Compute Q = Q x Qj
-      cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, Q.row, Qj.column,
-                  Q.row, 1.0, Q.data, Q.row, Qj.data, Qj.row, 0.0, res.data,
-                  res.row);
+      cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, buffer.Q.row, Qj.column,
+                  buffer.Q.row, 1.0, buffer.Q.data, buffer.Q.row, Qj.data, Qj.row, 0.0, buffer.res.data,
+                  buffer.res.row);
       // Swap Q and res
-      buf = Q;
-      Q = res;
-      res = buf;
+      buf = buffer.Q;
+      buffer.Q = buffer.res;
+      buffer.res = buf;
       // matrix_print_colmajor(&Q);
     }
 
     // printf("ma petite partie crash pas\n");
 
     // Update f
-    const double kBeta = H.data[MAT_GET_CMAJOR(H, k + 1, k)];
-    printf("Hm: \n");
-    matrix_print_colmajor(&H);
+    const double kBeta = buffer.H.data[MAT_GET_CMAJOR(buffer.H, k + 1, k)];
+/*     printf("Hm: \n");
+    matrix_print_colmajor(&buffer.H);
+    exit(1); */
     // printf("Beta: %f\n", kBeta);
-    const double kSigma = Q.data[MAT_GET_CMAJOR(Q, m, k)];
-    printf("Sigma %lf Beta %lf\n", kSigma, kBeta);
-    for (size_t i = 0; i < f.n; i++)
+    const double kSigma = buffer.Q.data[MAT_GET_CMAJOR(buffer.Q, m, k)];
+    //matrix_print_colmajor(&buffer.Q);
+    for (size_t i = 0; i < buffer.f.n; i++)
     {
-      f.data[i] = V.data[MAT_GET_CMAJOR(V, i, V.column - 1)] * kBeta +
-                  f.data[i] * kSigma;
-      printf("f[%d] = %f\n", i, f.data[i]);
+      buffer.f.data[i] = buffer.V.data[MAT_GET_CMAJOR(buffer.V, i, buffer.V.column - 1)] * kBeta +
+                  buffer.f.data[i] * kSigma;
     }
-    exit(1);
+    // exit(1);
 
     // Update V
     // printf("ICI 4: \n");
     // matrix_print_colmajor(&V);
     // matrix_print_colmajor(&Q);
-    matrix_t new_v = matrix_create(V.row, V.column);
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, V.row, k,
-                V.column - 1, 1.0, V.data, V.row, Q.data, Q.row, 0.0,
+    matrix_t new_v = matrix_create(buffer.V.row, buffer.V.column);
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, buffer.V.row, k,
+                buffer.V.column - 1, 1.0, buffer.V.data, buffer.V.row, buffer.Q.data, buffer.Q.row, 0.0,
                 new_v.data, new_v.row);
-    matrix_free(&V);
-    V = new_v;
+    matrix_free(&buffer.V);
+    buffer.V = new_v;
     // printf("V post erase: \n");
     // matrix_print_colmajor(&V);
 
     // Update H
-    for (size_t y = k; y < H.row; y++)
+    for (size_t y = k; y < buffer.H.row; y++)
     {
-      for (size_t x = k; x < H.column; x++)
+      for (size_t x = k; x < buffer.H.column; x++)
       {
-        H.data[MAT_GET_CMAJOR(H, y, x)] = .0;
+        buffer.H.data[MAT_GET_CMAJOR(buffer.H, y, x)] = .0;
       }
     }
     //  Selection des shifts
     //  Decomposition QR k fois
     //  Update de V et A, et f (vecteur d'entrée)
-    arnoldiProjection(k, A, &f, m, &V, &H, &buffer_arnoldi);
+    arnoldiProjection(k, A, &buffer.f, m, &buffer.V, &buffer.H, &buffer.buffer_arnoldi);
     // Restart
   }
 
-  vector_free(&f);
-  matrix_free(&V);
-  matrix_free(&H);
-  matrix_free(&T);
-  matrix_free(&Z);
-
-  matrix_free(&H_copy);
-  matrix_free(&Q);
-  vector_free(&tau);
-  matrix_free(&res);
-  matrix_free(&res_final);
-
-  vector_free(&buffer_eigen_sort);
-  vector_free(&buffer_arnoldi);
+  bufferIRAM_free(&buffer);
 
   printf("Done !\n");
   printf("H: \n");
-  matrix_print_colmajor(&H);
+  matrix_print_colmajor(&buffer.H);
   printf("itération : %ld / max_iter: %ld\nerror : %lf / max error: %lf\n",
          count_iter, max_iter, fabs(residual), max_error);
 

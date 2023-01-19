@@ -46,13 +46,29 @@ int main(int argc, char **argv)
   matrix_print(&A);
   printf("\n\n");
 
-  eigenData_t eigen = IRAM(&A, 3, 10, 1e-12);
+  eigenData_t eigen = IRAM(&A, 3, 10, 1e-6);
   print_results(eigen);
 
   matrix_free(&A);
   matrix_free(&eigen.eigen_vec);
   vector_free(&eigen.eigen_val_r);
   vector_free(&eigen.eigen_val_i);
+
+  /*size_t m = 3;
+
+  matrix_t A = matrix_readFromFile(argv[1]);
+  vector_t b = vector_readFromFile(argv[2]);
+  
+  matrix_t V = matrix_create(A.row, m + 1);
+  matrix_t H = matrix_create(m + 1, m);
+
+  matrix_print(&A);
+  vector_print(&b);
+
+  arnoldiProjection(1, &A, &b, m, &V, &H);
+
+  matrix_print(&V);
+  matrix_print(&H);*/
 
   return 0;
 }
