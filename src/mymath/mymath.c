@@ -174,7 +174,7 @@ vector_t vector_readFromFile(const char *restrict filename)
   return vec;
 }
 
-void matrix_print(const matrix_t *restrict matrix)
+void matrix_print_rowmajor(const matrix_t *restrict matrix)
 {
   printf("[%lu, %lu]\n", matrix->row, matrix->column);
   for (size_t i = 0; i < matrix->row; i++)
@@ -450,7 +450,6 @@ double IRAM_computeError(size_t k, const matrix_t *restrict eigen_vectors,
   return fabs(error);
 }
 
-
 eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
                  const double max_error)
 {
@@ -571,14 +570,13 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
       buffer.res = buf;
     }
 
-
     // Update f
     const double kBeta = buffer.H.data[MAT_GET_CMAJOR(buffer.H, k + 1, k)];
     const double kSigma = buffer.Q.data[MAT_GET_CMAJOR(buffer.Q, m, k)];
     for (size_t i = 0; i < buffer.f.n; i++)
     {
       buffer.f.data[i] = buffer.V.data[MAT_GET_CMAJOR(buffer.V, i, buffer.V.column - 1)] * kBeta +
-                  buffer.f.data[i] * kSigma;
+                         buffer.f.data[i] * kSigma;
     }
 
     matrix_t new_v = matrix_create(buffer.V.row, buffer.V.column);
@@ -607,6 +605,255 @@ eigenData_t IRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
 
   printf("itération : %ld / max_iter: %ld\nerror : %lf / max error: %lf\n",
          count_iter, max_iter, fabs(residual), max_error);
+
+  return eigen;
+}
+
+/**
+ * @brief
+ *
+ * @param A
+ * @param n_eigen
+ * @param max_iter
+ * @param max_error
+ * @return eigenData_t
+ * @param best_rank
+ */
+eigenData_t MIRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter,
+                  const double max_error, int *best_rank)
+{
+  int rank, comm_size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+
+  MPI_Request *requests = (MPI_Request *)malloc(sizeof(MPI_Request) * (comm_size - 1));
+  MPI_Status *statuses = (MPI_Status *)malloc(sizeof(MPI_Status) * (comm_size - 1));
+
+  // Number of wanted eigen values
+  const size_t k = n_eigen;
+  // Subspace size
+  const size_t m = (3 * k) + rank;
+  printf("[P%d]: MIRAM: m: %lu\n", rank, m);
+
+  // Supplementary dimensions
+  // (Difference between wanted n eigen values and subspace size)
+  const size_t p = m - k;
+
+  // Allocate buffer for IRAM
+  bufferIRAM_t buffer = bufferIRAM_init(A->row, m);
+  double *H_buffer = (double *)malloc(sizeof(double) * k * k);
+
+  // Final eigenvalues/vectors returned by the algorithm
+  eigenData_t eigen;
+  eigen.eigen_val_r = vector_create(m);
+  eigen.eigen_val_i = vector_create(m);
+  eigen.eigen_vec = matrix_create(A->row, m);
+
+  double residual = DBL_MAX;
+  size_t count_iter = 0;
+
+  // Bootstrap the algorithm with a full Arnoldi method
+  arnoldiProjection(1, A, &buffer.f, m, &buffer.V, &buffer.H, &buffer.buffer_arnoldi);
+
+  while (1)
+  {
+    count_iter++;
+
+    // Save H(m, m + 1) for later
+    const double h_factor = buffer.H.data[MAT_GET_CMAJOR(buffer.H, buffer.H.row - 1, buffer.H.column - 1)];
+
+    // Compute the eigenvalues/eigenvectors in the subspace, using H
+    matrix_copy(&buffer.H_copy, &buffer.H);
+    IRAM_computeEigenSubspace(&buffer.H_copy, &eigen.eigen_val_r, &eigen.eigen_val_i, &buffer.Z);
+
+    // Retro-projection of the eigenvectors in the original space by multiplying
+    // Z and V
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, buffer.Z.row, buffer.V.column - 1,
+                buffer.Z.column, 1.0, buffer.Z.data, buffer.Z.column, buffer.V.data, buffer.V.row, 0.0,
+                eigen.eigen_vec.data, eigen.eigen_vec.column);
+
+    // eigen_sort(&eigen, &buffer.buffer_eigen_sort);
+    eigen_sort(&eigen, &buffer.buffer_eigen_sort);
+
+    // Compute the residual error of the K first eigenvalues
+    residual = IRAM_computeError(k, &eigen.eigen_vec, h_factor);
+
+    // Synchronize the best_residual
+    double recv_residual = .0;
+    MPI_Allreduce(&residual, &recv_residual, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+
+    // Synchronize the best_rank
+    if (recv_residual == residual)
+    {
+      *best_rank = rank;
+      int request_index = 0;
+      for (int i = 0; i < comm_size; i++)
+      {
+        if (i == rank)
+          continue;
+        MPI_Isend(best_rank, 1, MPI_INT, i, 0, MPI_COMM_WORLD, requests + request_index);
+        request_index++;
+      }
+      MPI_Waitall(comm_size - 1, requests, statuses);
+    }
+    else
+    {
+      MPI_Recv(best_rank, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+
+    if (recv_residual < max_error || count_iter > max_iter)
+    {
+      printf("error [%.g]\n", recv_residual);
+      break;
+    }
+
+    // TODO: BETTER RANK EXECUTION
+    if (residual == recv_residual)
+    {
+      double *mu = eigen.eigen_val_r.data + k;
+
+      // Q is the identity matrix
+      matrix_fill(&buffer.Q, 0.0);
+      for (size_t i = 0; i < buffer.Q.row; i++)
+      {
+        buffer.Q.data[MAT_GET_CMAJOR(buffer.Q, i, i)] = 1.0;
+      }
+
+      // Perform an implicitly shifted QR decomposition using the unwanted
+      // eigenvalues as shifts
+      for (size_t i = 0; i < p; i++)
+      {
+
+        // Copy H
+        matrix_copy(&buffer.H_copy, &buffer.H);
+
+        // H - ujI
+        for (size_t j = 0; j < buffer.H.column; j++)
+        {
+          buffer.H_copy.data[MAT_GET_CMAJOR(buffer.H_copy, j, j)] -= mu[i];
+        }
+
+        // QR decomposition
+        // Here, tau contains elementary reflectors
+
+        LAPACKE_dgeqrf(LAPACK_COL_MAJOR, buffer.H_copy.row - 1, buffer.H_copy.column,
+                       buffer.H_copy.data, buffer.H_copy.row, buffer.tau.data);
+        // Compute Qj from elementary reflectors and store it in H_copy
+        LAPACKE_dorgqr(LAPACK_COL_MAJOR, buffer.H_copy.row - 1, buffer.H_copy.column,
+                       buffer.H_copy.column, buffer.H_copy.data, buffer.H_copy.row, buffer.tau.data);
+
+        // From here on, H_copy contains Qj
+
+        // Make an alias for clarity
+        matrix_t Qj;
+        Qj.row = buffer.H_copy.row;
+        Qj.column = buffer.H_copy.column;
+        Qj.data = buffer.H_copy.data;
+
+        // Compute Qj* x H
+        cblas_dgemm(CblasColMajor, CblasConjTrans, CblasNoTrans, Qj.row - 1, buffer.H.column,
+                    Qj.column, 1.0, Qj.data, Qj.row, buffer.H.data, buffer.H.row, 0.0, buffer.res.data,
+                    buffer.res.row);
+
+        //  Compute (Qj* x H) x Qj
+        cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, buffer.res.row, Qj.column,
+                    buffer.res.column, 1.0, buffer.res.data, buffer.res.column, Qj.data, Qj.row, 0.0,
+                    buffer.res_final.data, buffer.res_final.row);
+        // Swap H and res_final
+        matrix_t buf = buffer.H;
+        buffer.H = buffer.res_final;
+        buffer.res_final = buf;
+
+        // Compute Q = Q x Qj
+        cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, buffer.Q.row, Qj.column,
+                    buffer.Q.row, 1.0, buffer.Q.data, buffer.Q.row, Qj.data, Qj.row, 0.0, buffer.res.data,
+                    buffer.res.row);
+        // Swap Q and res
+        buf = buffer.Q;
+        buffer.Q = buffer.res;
+        buffer.res = buf;
+      }
+
+      // Update f
+      const double kBeta = buffer.H.data[MAT_GET_CMAJOR(buffer.H, k + 1, k)];
+      const double kSigma = buffer.Q.data[MAT_GET_CMAJOR(buffer.Q, m, k)];
+      for (size_t i = 0; i < buffer.f.n; i++)
+      {
+        buffer.f.data[i] = buffer.V.data[MAT_GET_CMAJOR(buffer.V, i, buffer.V.column - 1)] * kBeta +
+                           buffer.f.data[i] * kSigma;
+      }
+
+      matrix_t new_v = matrix_create(buffer.V.row, buffer.V.column);
+      cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, buffer.V.row, k,
+                  buffer.V.column - 1, 1.0, buffer.V.data, buffer.V.row, buffer.Q.data, buffer.Q.row, 0.0,
+                  new_v.data, new_v.row);
+      matrix_free(&buffer.V);
+      buffer.V = new_v;
+
+      // TODO: hum tres bizarr
+      // // Update H
+      // for (size_t y = k; y < buffer.H.row; y++)
+      // {
+      //   for (size_t x = k; x < buffer.H.column; x++)
+      //   {
+      //     buffer.H.data[MAT_GET_CMAJOR(buffer.H, y, x)] = .0;
+      //   }
+      // }
+
+      // H Copy in a sent buffer
+      for (size_t i = 0; i < k; i++)
+      {
+        for (size_t j = 0; j < k; j++)
+        {
+          H_buffer[i * k + j] = buffer.H.data[MAT_GET_CMAJOR(buffer.H, i, j)];
+        }
+      }
+    }
+    else
+    {
+      // TODO: Maybe useless
+      matrix_fill(&buffer.V, .0);
+    }
+    matrix_fill(&buffer.H, .0);
+
+    MPI_Request requests_V = MPI_REQUEST_NULL;
+    MPI_Ibcast(buffer.V.data, k * buffer.V.row, MPI_DOUBLE, *best_rank, MPI_COMM_WORLD, &requests_V);
+
+    MPI_Bcast(H_buffer, k * k, MPI_DOUBLE, *best_rank, MPI_COMM_WORLD);
+
+    for (size_t i = 0; i < k; i++)
+    {
+      for (size_t j = 0; j < k; j++)
+      {
+        buffer.H.data[MAT_GET_CMAJOR(buffer.H, i, j)] = H_buffer[i * k + j];
+      }
+    }
+
+    MPI_Wait(&requests_V, MPI_STATUS_IGNORE);
+
+    /*
+    usleep(1000 * rank);
+    printf("best[%d] iter %ld\nH & V FOR %d:\n", *best_rank, count_iter, rank);
+    matrix_print_colmajor(&buffer.H);
+    matrix_print_colmajor(&buffer.V);
+    printf("\n------------------------------------------------------\n\n");
+    MPI_Barrier(MPI_COMM_WORLD);
+    */
+
+    //  Selection des shifts
+    //  Decomposition QR k fois
+    //  Update de V et A, et f (vecteur d'entrée)
+    arnoldiProjection(k, A, &buffer.f, m, &buffer.V, &buffer.H, &buffer.buffer_arnoldi);
+    // Restart
+  }
+
+  bufferIRAM_free(&buffer);
+  free(H_buffer);
+  free(requests);
+  free(statuses);
+
+  printf("[P%d]: itération : %ld / max_iter: %ld\nerror : %lf / max error: %lf\n",
+         rank, count_iter, max_iter, fabs(residual), max_error);
 
   return eigen;
 }

@@ -1,6 +1,6 @@
 
 
-add_subdirectory(mmio)
+#add_subdirectory(mmio)
 add_subdirectory(mymath)
 
 add_executable(main main.c)

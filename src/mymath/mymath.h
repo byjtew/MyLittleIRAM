@@ -8,6 +8,8 @@
 #include <cblas.h>
 #include <float.h>
 #include <string.h>
+#include <mpi.h>
+#include <unistd.h>
 
 typedef struct vector_s
 {
@@ -52,7 +54,8 @@ vector_t vector_readFromFile(const char *restrict filename);
 matrix_t matrix_write(FILE *restrict file);
 vector_t vector_write(FILE *restrict file);
 
-void matrix_print(const matrix_t *restrict matrix);
+void matrix_print_rowmajor(const matrix_t *restrict matrix);
+void matrix_print_colmajor(const matrix_t *restrict matrix);
 void vector_print(const vector_t *restrict vector);
 
 /**
@@ -69,3 +72,6 @@ void arnoldiProjection(size_t start_step, const matrix_t *restrict A, const vect
                        const vector_t *restrict buffer);
 
 eigenData_t IRAM(const matrix_t *restrict A, const size_t n_eigen, const size_t max_iter, const double max_error);
+
+
+eigenData_t MIRAM(const matrix_t *restrict A, const size_t n_eigen, const size_t max_iter, const double max_error, int* best_rank);
