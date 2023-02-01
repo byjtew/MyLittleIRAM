@@ -63,6 +63,7 @@ int main(int argc, char **argv)
     printf("\n\n");
   }
 
+  // Create and sychronize matrix
   size_t A_row = rank == 0 ? A.row : 0;
   size_t A_column = rank == 0 ? A.column : 0;
   MPI_Bcast(&A_row, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -71,10 +72,9 @@ int main(int argc, char **argv)
     A = matrix_create(A_row, A_column);
   MPI_Bcast(A.data, A_row * A_column, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-  // eigenData_t eigen = IRAM(&A, 3, 10, 1e-6);
-
   int best_rank = -1;
-  eigenData_t eigen = MIRAM(&A, 3, 10, 1e-6, &best_rank);
+  const size_t nb_eigen_values = 3;
+  eigenData_t eigen = MIRAM(&A, nb_eigen_values, 10, 1e-6, &best_rank);
 
   MPI_Barrier(MPI_COMM_WORLD);
   if (best_rank == rank)

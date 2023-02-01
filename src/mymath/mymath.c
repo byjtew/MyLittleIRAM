@@ -626,9 +626,6 @@ eigenData_t MIRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-  MPI_Request *requests = (MPI_Request *)malloc(sizeof(MPI_Request) * (comm_size - 1));
-  MPI_Status *statuses = (MPI_Status *)malloc(sizeof(MPI_Status) * (comm_size - 1));
-
   // Number of wanted eigen values
   const size_t k = n_eigen;
   // Subspace size
@@ -686,15 +683,12 @@ eigenData_t MIRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter
     if (recv_residual == residual)
     {
       *best_rank = rank;
-      int request_index = 0;
       for (int i = 0; i < comm_size; i++)
       {
         if (i == rank)
           continue;
-        MPI_Isend(best_rank, 1, MPI_INT, i, 0, MPI_COMM_WORLD, requests + request_index);
-        request_index++;
+        MPI_Send(best_rank, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
       }
-      MPI_Waitall(comm_size - 1, requests, statuses);
     }
     else
     {
@@ -707,7 +701,6 @@ eigenData_t MIRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter
       break;
     }
 
-    // TODO: BETTER RANK EXECUTION
     if (residual == recv_residual)
     {
       double *mu = eigen.eigen_val_r.data + k;
@@ -790,16 +783,6 @@ eigenData_t MIRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter
       matrix_free(&buffer.V);
       buffer.V = new_v;
 
-      // TODO: hum tres bizarr
-      // // Update H
-      // for (size_t y = k; y < buffer.H.row; y++)
-      // {
-      //   for (size_t x = k; x < buffer.H.column; x++)
-      //   {
-      //     buffer.H.data[MAT_GET_CMAJOR(buffer.H, y, x)] = .0;
-      //   }
-      // }
-
       // H Copy in a sent buffer
       for (size_t i = 0; i < k; i++)
       {
@@ -811,7 +794,6 @@ eigenData_t MIRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter
     }
     else
     {
-      // TODO: Maybe useless
       matrix_fill(&buffer.V, .0);
     }
     matrix_fill(&buffer.H, .0);
@@ -822,23 +804,10 @@ eigenData_t MIRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter
     MPI_Bcast(H_buffer, k * k, MPI_DOUBLE, *best_rank, MPI_COMM_WORLD);
 
     for (size_t i = 0; i < k; i++)
-    {
       for (size_t j = 0; j < k; j++)
-      {
         buffer.H.data[MAT_GET_CMAJOR(buffer.H, i, j)] = H_buffer[i * k + j];
-      }
-    }
 
     MPI_Wait(&requests_V, MPI_STATUS_IGNORE);
-
-    /*
-    usleep(1000 * rank);
-    printf("best[%d] iter %ld\nH & V FOR %d:\n", *best_rank, count_iter, rank);
-    matrix_print_colmajor(&buffer.H);
-    matrix_print_colmajor(&buffer.V);
-    printf("\n------------------------------------------------------\n\n");
-    MPI_Barrier(MPI_COMM_WORLD);
-    */
 
     //  Selection des shifts
     //  Decomposition QR k fois
@@ -849,8 +818,6 @@ eigenData_t MIRAM(const matrix_t *A, const size_t n_eigen, const size_t max_iter
 
   bufferIRAM_free(&buffer);
   free(H_buffer);
-  free(requests);
-  free(statuses);
 
   printf("[P%d]: itération : %ld / max_iter: %ld\nerror : %lf / max error: %lf\n",
          rank, count_iter, max_iter, fabs(residual), max_error);
