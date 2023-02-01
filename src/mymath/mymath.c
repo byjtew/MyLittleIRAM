@@ -177,12 +177,17 @@ vector_t vector_readFromFile(const char *restrict filename)
 void matrix_print_rowmajor(const matrix_t *restrict matrix)
 {
   printf("[%lu, %lu]\n", matrix->row, matrix->column);
+  if (matrix->row > 20 || matrix->column > 20)
+  {
+    printf("[\n\t...\n]\n");
+    return;
+  }
+
   for (size_t i = 0; i < matrix->row; i++)
   {
     for (size_t j = 0; j < matrix->column; j++)
-    {
       printf("%lf ", matrix->data[i * matrix->column + j]);
-    }
+
     printf("\n");
   }
 }
@@ -190,6 +195,12 @@ void matrix_print_rowmajor(const matrix_t *restrict matrix)
 void matrix_print_colmajor(const matrix_t *restrict matrix)
 {
   printf("[%lu, %lu]\n", matrix->row, matrix->column);
+  if (matrix->row > 20 || matrix->column > 20)
+  {
+    printf("[\n\t...\n]\n");
+    return;
+  }
+  
   for (size_t i = 0; i < matrix->row; i++)
   {
     for (size_t j = 0; j < matrix->column; j++)
