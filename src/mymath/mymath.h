@@ -52,7 +52,8 @@ vector_t vector_readFromFile(const char *filename);
 matrix_t matrix_write(FILE *file);
 vector_t vector_write(FILE *file);
 
-void matrix_print(const matrix_t *matrix);
+void matrix_print_rowmajor(const matrix_t *matrix);
+void marix_print_colmajor(const matrix_t *matrix);
 void vector_print(const vector_t *vector);
 
 double vector_dotProduct(const vector_t *x, const vector_t *y);
