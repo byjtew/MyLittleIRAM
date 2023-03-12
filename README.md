@@ -40,7 +40,7 @@ Pour une matrice 4x4:
 9 1 2 3
 ```
 
-####Autres variables:
+#### Autres variables:
 Pour modifier le nombre maximal d'itérations: modifier `#define MAX_ITERATIONS` (*main.c*)
 Pour modifier l'erreur minimale: modifier `#define MIN_ERROR` (*main.c*)
 
